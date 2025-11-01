@@ -1,0 +1,40 @@
+﻿# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+*.log
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache
+.vs/
+
+# Rider and other IDEs
+.idea/
+*.sln.iml
+
+# Auto-generated files
+*.generated.cs
+
+# Publish output
+publish/
+*.PublishSettings
+
+# Packages
+*.nupkg
+*.snupkg
+packages/
+!**/packages/build/
+
+# Coverage and test results
+TestResult*/
+*.coverage
+*.coveragexml
+
+# Others
+.env
+appsettings.Development.json
