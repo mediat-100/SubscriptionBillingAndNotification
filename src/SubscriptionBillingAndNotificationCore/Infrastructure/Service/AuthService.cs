@@ -4,6 +4,7 @@ using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Dtos.Requests;
 using SubscriptionBillingAndNotificationCore.Dtos.Responses;
 using SubscriptionBillingAndNotificationCore.Entities;
+using SubscriptionBillingAndNotificationCore.Enums;
 using SubscriptionBillingAndNotificationCore.Utilities;
 using System;
 using System.Collections.Generic;
@@ -36,59 +37,53 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             audience = _configuration.GetSection("Jwt")["audience"];
         }
 
-        public async Task<BaseResponse<AuthResponseDto>> SignUp(AuthRequestDto request)
+        public async Task<BaseResponse<AuthResponseDto>> SignUp(SignUpRequestDto request)
         {
-            try
+            // check if user already exist
+            var existingUser = _userService.SearchUsers(email: request.Email);
+            if (existingUser.Count > 0)
+                throw new ValidationException("User already exist!");
+
+            // save user to db
+            var user = new User
             {
-                // check if user already exist
-                var existingUser = _userService.SearchUsers(email: request.Email);
-                if (existingUser.Count > 0)
-                    throw new Exception("User already exist");
+                Firstname = request.Firstname,
+                Lastname = request.Lastname,
+                Email = request.Email,
+                Password = Helpers.HashPassword(request.Password),
+                Status = UserStatus.Inactive,
+                UserType = UserType.User
+            };
 
-                // save user to db
-                var user = new User
-                {
-                    Email = request.Email,
-                    Password = Helpers.HashPassword(request.Password),
-                };
+            var userResp = await _userRepository.AddUser(user);
 
-                await _userRepository.AddUser(user);
+            // generate token and refresh token (SEND CONFIRMATION MAIL TO USER AND NOT AUTHENTICATE)
+            var authResponse = await _tokenService.AuthenticateUser(user);
 
-                // generate token and refresh token
-               var authResponse = await _tokenService.AuthenticateUser(user);
-
-                return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
-            }
-            catch (Exception ex)
-            {
-                return BaseResponse<AuthResponseDto>.Fail(ex.Message);
-            }
+            return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
            
         }
 
         public async Task<BaseResponse<AuthResponseDto>> Login(AuthRequestDto request)
         {
-            try
-            {
-                if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
-                    throw new Exception("Please input your email and password");
-                // check if email exist
-                var user = _userRepository.SearchUsers(email: request.Email).FirstOrDefault() 
-                    ?? throw new Exception("User does not exist!");
-                // check if password is correct
-                var hashedPassword = Helpers.HashPassword(request.Password);
-                var verifyPassword = Helpers.VerifyPassword(request.Password, hashedPassword);
-                if (!verifyPassword)
-                    throw new Exception("Incorrect Email or Password");
-                // login user
-                var authResponse = await _tokenService.AuthenticateUser(user);
+            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+                throw new ValidationException("Please input your email and password");
 
-                return BaseResponse<AuthResponseDto>.Ok(authResponse, "Login successful");
-            }
-            catch(Exception ex)
-            {
-                return BaseResponse<AuthResponseDto>.Fail(ex.Message);
-            }
+            // check if email exist
+            var user = _userRepository.SearchUsers(email: request.Email).FirstOrDefault() 
+                ?? throw new ValidationException("User does not exist!");
+
+            // check if password is correct
+            var hashedPassword = Helpers.HashPassword(request.Password);
+            var verifyPassword = Helpers.VerifyPassword(request.Password, hashedPassword);
+            if (!verifyPassword)
+                throw new ValidationException("Incorrect Email or Password");
+
+            // login user
+            var authResponse = await _tokenService.AuthenticateUser(user);
+
+            return BaseResponse<AuthResponseDto>.Ok(authResponse, "Login successful");
+            
         }
 
 

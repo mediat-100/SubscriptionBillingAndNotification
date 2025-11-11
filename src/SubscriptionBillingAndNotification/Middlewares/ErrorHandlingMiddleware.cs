@@ -34,12 +34,13 @@ namespace SubscriptionBillingAndNotification.Middlewares
             response.ContentType = "application/json";
 
             var errorResponse = new ErrorResponse();
+            var customResponse = BaseResponse<object>.Fail();
 
             switch (exception)
             {
                 case ValidationException ex:
                     response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    errorResponse.Message = "Validation failed";
+                    errorResponse.Message = $"Validation failed: {ex.Message}";
                     errorResponse.Details = ex.Errors?.ToList();
                     break;
 
@@ -76,6 +77,8 @@ namespace SubscriptionBillingAndNotification.Middlewares
 
             errorResponse.StatusCode = response.StatusCode;
             errorResponse.Timestamp = DateTime.UtcNow;
+
+            //BaseResponse<>
 
             var jsonResponse = JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions
             {

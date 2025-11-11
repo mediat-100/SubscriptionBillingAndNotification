@@ -10,7 +10,7 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IService
 {
     public interface IAuthService
     {
-        Task<BaseResponse<AuthResponseDto>> SignUp(AuthRequestDto request);
+        Task<BaseResponse<AuthResponseDto>> SignUp(SignUpRequestDto request);
         Task<BaseResponse<AuthResponseDto>> Login(AuthRequestDto request);
     }
 }

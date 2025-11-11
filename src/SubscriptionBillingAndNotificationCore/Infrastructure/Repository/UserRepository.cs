@@ -20,19 +20,10 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
         }
         public async Task<User> AddUser(User user)
         {
-            try
-            {
-                _dbContext.Users.Add(user);
-                await _dbContext.SaveChangesAsync();
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync();
 
-                return user;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("An error occurred");
-            }
-
-           
+            return user;      
         }
 
         public IEnumerable<User> GetAllUsers()

@@ -5,8 +5,8 @@ using SubscriptionBillingAndNotificationCore.Dtos.Requests;
 namespace SubscriptionBillingAndNotification.Controllers
 {
     [ApiController]
-    [Route("Auth")]
-    public class AuthController : Controller
+    [Route("[controller]")]
+    public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
 
@@ -16,35 +16,19 @@ namespace SubscriptionBillingAndNotification.Controllers
         }
 
         [HttpPost]
-        [Route("signup")]
-        public IActionResult Signup(AuthRequestDto request)
+        [Route("/signup")]
+        public IActionResult Signup(SignUpRequestDto request)
         {
-            try
-            {
-                var response = _authService.SignUp(request);
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex);
-            }
-          
+            var response = _authService.SignUp(request);
+            return Ok(response);
         }
 
         [HttpPost]
         [Route("login")]
         public IActionResult Login(AuthRequestDto request)
         {
-            try
-            {
-                var response = _authService.Login(request);
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex);
-            }
-         
+            var response = _authService.Login(request);
+            return Ok(response);
         }
     }
 }

@@ -61,7 +61,7 @@ namespace Test.ServiceTests
         public async Task SignUp_WithNewUser_ShouldReturnSuccessResponse()
         {
 
-                var authRequest = _fixture.Build<AuthRequestDto>()
+                var signupRequest = _fixture.Build<SignUpRequestDto>()
             .With(x => x.Email, "abc@email.com")
             .With(x => x.Password, "12345678") 
             .Create();
@@ -73,7 +73,7 @@ namespace Test.ServiceTests
                     .Create();
 
                 // Mock: User doesn't exist yet
-                _userServiceMock.Setup(x => x.SearchUsers(authRequest.Email))
+                _userServiceMock.Setup(x => x.SearchUsers(signupRequest.Email))
                     .Returns(new List<User>());
 
                 // Mock: AddUser completes successfully
@@ -85,7 +85,7 @@ namespace Test.ServiceTests
                     .ReturnsAsync(authResponse);
 
                 // Act
-                var result = await _authService.SignUp(authRequest);
+                var result = await _authService.SignUp(signupRequest);
 
                 // Assert
                 result.Should().NotBeNull();
@@ -97,8 +97,8 @@ namespace Test.ServiceTests
                 result.Data.RefreshToken.Should().Be("sample-refresh-token");
 
                 _userRepositoryMock.Verify(x => x.AddUser(It.Is<User>(u =>
-            u.Email == authRequest.Email &&
-            u.Password != authRequest.Password  // Password should be hashed
+            u.Email == signupRequest.Email &&
+            u.Password != signupRequest.Password  // Password should be hashed
         )), Times.Once);
             }
 
@@ -106,7 +106,7 @@ namespace Test.ServiceTests
         public async Task SignUp_WithExistingUser_ShouldReturnFailureResponse()
         {
             // Arrange
-            var request = new AuthRequestDto
+            var request = new SignUpRequestDto
             {
                 Email = "existing@example.com",
                 Password = "Password123!"
