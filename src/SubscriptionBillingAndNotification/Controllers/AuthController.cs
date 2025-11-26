@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Dtos.Requests;
+using static SubscriptionBillingAndNotificationCore.Utilities.CustomExceptions;
 
 namespace SubscriptionBillingAndNotification.Controllers
 {
@@ -16,18 +17,18 @@ namespace SubscriptionBillingAndNotification.Controllers
         }
 
         [HttpPost]
-        [Route("/signup")]
-        public IActionResult Signup(SignUpRequestDto request)
-        {
-            var response = _authService.SignUp(request);
+        [Route("signup")]
+        public async Task<IActionResult> Signup(SignUpRequestDto request)
+        {                
+            var response = await _authService.SignUp(request);
             return Ok(response);
         }
 
         [HttpPost]
         [Route("login")]
-        public IActionResult Login(AuthRequestDto request)
+        public async Task<IActionResult> Login(AuthRequestDto request)
         {
-            var response = _authService.Login(request);
+            var response = await _authService.Login(request);
             return Ok(response);
         }
     }

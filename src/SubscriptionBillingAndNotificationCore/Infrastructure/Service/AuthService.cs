@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Configuration;
 using SubscriptionBillingAndNotificationCore.Contracts.IRepository;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Dtos.Requests;
@@ -12,6 +13,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+//using System.Web.Http.ModelBinding;
 using static SubscriptionBillingAndNotificationCore.Utilities.CustomExceptions;
 
 namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
@@ -39,12 +41,31 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
         public async Task<BaseResponse<AuthResponseDto>> SignUp(SignUpRequestDto request)
         {
-            // check if user already exist
+            if (!Helpers.IsValidEmail(request.Email))
+                throw new ValidationException("A valid email is required.");
+
+            if (request.Password.Length < 8)
+                throw new ValidationException("Password must be at least 8 characters long.");
+
+            if (!request.Password.Any(char.IsUpper))
+                throw new ValidationException("Password must contain at least one uppercase letter.");
+
+            if (!request.Password.Any(char.IsLower))
+                throw new ValidationException("Password must contain at least one lowercase letter.");
+
+            if (!request.Password.Any(char.IsDigit))
+                throw new ValidationException("Password must contain at least one number.");
+
+            if (!request.Password.Any(ch => "!@#$%^&*()_+-=[]{}|;:'\",.<>?/".Contains(ch)))
+                throw new ValidationException("Password must contain at least one special character.");
+
+            if (request.Password.Contains(" "))
+                throw new ValidationException("Password cannot contain spaces.");
+
             var existingUser = _userService.SearchUsers(email: request.Email);
             if (existingUser.Count > 0)
                 throw new ValidationException("User already exist!");
 
-            // save user to db
             var user = new User
             {
                 Firstname = request.Firstname,
@@ -57,7 +78,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
             var userResp = await _userRepository.AddUser(user);
 
-            // generate token and refresh token (SEND CONFIRMATION MAIL TO USER AND NOT AUTHENTICATE)
+            //TODO: 1) SEND CONFIRMATION MAIL TO USER AND NOT AUTHENTICATE, 2) AUTHENTICATE VIA OAUTH
             var authResponse = await _tokenService.AuthenticateUser(user);
 
             return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
@@ -69,17 +90,16 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
                 throw new ValidationException("Please input your email and password");
 
-            // check if email exist
-            var user = _userRepository.SearchUsers(email: request.Email).FirstOrDefault() 
-                ?? throw new ValidationException("User does not exist!");
+            var existingUsers = _userService.SearchUsers(request.Email);
+            if (existingUsers.Count() == 0)
+                throw new UnauthorizedException("Incorrect Email or Password");
 
-            // check if password is correct
-            var hashedPassword = Helpers.HashPassword(request.Password);
-            var verifyPassword = Helpers.VerifyPassword(request.Password, hashedPassword);
+            var user = existingUsers.FirstOrDefault();
+
+            var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
             if (!verifyPassword)
-                throw new ValidationException("Incorrect Email or Password");
+                throw new UnauthorizedException("Incorrect Email or Password!");
 
-            // login user
             var authResponse = await _tokenService.AuthenticateUser(user);
 
             return BaseResponse<AuthResponseDto>.Ok(authResponse, "Login successful");

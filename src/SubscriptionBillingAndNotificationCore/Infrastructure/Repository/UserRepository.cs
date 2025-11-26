@@ -64,7 +64,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
         {
             try
             {
-                var result = _dbContext.Users.Where(x => x.Email == email).ToList();
+                List<User> result = _dbContext.Users.Where(x => x.Email == email).ToList();
                 return result;
             }
             catch(Exception ex)

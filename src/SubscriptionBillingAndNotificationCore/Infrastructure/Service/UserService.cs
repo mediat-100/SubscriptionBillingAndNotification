@@ -45,10 +45,10 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             return user;
         }
 
-        public List<User> SearchUsers(string email)
+        public List<User?> SearchUsers(string email)
         {
             var users = _userRepository.SearchUsers(email);
-
+          
             return users;
         }
     }

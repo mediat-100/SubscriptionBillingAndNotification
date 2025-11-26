@@ -9,11 +9,16 @@ namespace SubscriptionBillingAndNotification.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ErrorHandlingMiddleware> _logger;
+        private readonly IWebHostEnvironment _environment;
 
-        public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
+        public ErrorHandlingMiddleware(
+            RequestDelegate next,
+            ILogger<ErrorHandlingMiddleware> logger,
+            IWebHostEnvironment environment)
         {
             _next = next;
             _logger = logger;
+            _environment = environment;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -24,24 +29,27 @@ namespace SubscriptionBillingAndNotification.Middlewares
             }
             catch (Exception ex)
             {
-                await HandleExceptionAsync(context, ex);
+                // Log the full exception details regardless of environment
+                _logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
+
+                await HandleExceptionAsync(context, ex, _environment.IsDevelopment());
             }
         }
 
-        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static async Task HandleExceptionAsync(
+            HttpContext context,
+            Exception exception,
+            bool isDevelopment)
         {
             var response = context.Response;
             response.ContentType = "application/json";
-
             var errorResponse = new ErrorResponse();
-            var customResponse = BaseResponse<object>.Fail();
 
             switch (exception)
             {
                 case ValidationException ex:
                     response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    errorResponse.Message = $"Validation failed: {ex.Message}";
-                    errorResponse.Details = ex.Errors?.ToList();
+                    errorResponse.Message = ex.Message ?? "Validation failed";
                     break;
 
                 case NotFoundException ex:
@@ -71,23 +79,31 @@ namespace SubscriptionBillingAndNotification.Middlewares
 
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    errorResponse.Message = "An internal server error occurred";
+                    errorResponse.Message = "An internal server error occurred. Please try again later";
                     break;
             }
 
             errorResponse.StatusCode = response.StatusCode;
             errorResponse.Timestamp = DateTime.UtcNow;
 
-            //BaseResponse<>
+            // Add additional debugging info in development
+            if (isDevelopment || exception.InnerException != null)
+            {
+                errorResponse.Details = new ErrorDetails
+                {
+                    InnerException = exception.InnerException?.Message,
+                    StackTrace = exception.StackTrace                   
+                };
+                
+            }
 
             var jsonResponse = JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = isDevelopment 
             });
 
             await response.WriteAsync(jsonResponse);
         }
     }
-
-    
 }

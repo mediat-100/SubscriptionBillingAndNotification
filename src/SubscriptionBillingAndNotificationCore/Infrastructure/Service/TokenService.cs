@@ -29,9 +29,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
             _configuration = configuration;
             _userRepository = userRepository;
-            _secretKey = _configuration.GetSection("Jwt")["secretkey"];
-            _issuer = _configuration.GetSection("Jwt")["issuer"];
-            _audience = _configuration.GetSection("Jwt")["audience"];
+            _secretKey = _configuration.GetSection("Jwt")["Key"];
+            _issuer = _configuration.GetSection("Jwt")["Issuer"];
+            _audience = _configuration.GetSection("Jwt")["Audience"];
 
 
         }

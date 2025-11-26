@@ -10,7 +10,14 @@ namespace SubscriptionBillingAndNotificationCore.Dtos.Responses
     {
         public int StatusCode { get; set; }
         public string Message { get; set; } = string.Empty;
-        public List<string>? Details { get; set; }
+        public ErrorDetails? Details { get; set; }
         public DateTime Timestamp { get; set; }
+    }
+
+    public class ErrorDetails
+    {
+        public string? StackTrace { get; set; }
+        public string? InnerException { get; set; }
+        public string? OtherDetails { get; set; }
     }
 }

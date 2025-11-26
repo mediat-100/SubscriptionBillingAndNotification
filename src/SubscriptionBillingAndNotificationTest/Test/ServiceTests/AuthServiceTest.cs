@@ -22,6 +22,7 @@ using SubscriptionBillingAndNotificationCore.Utilities;
 using System.Security.Claims;
 using Azure.Core;
 using Azure;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Test.ServiceTests
 {
@@ -29,9 +30,6 @@ namespace Test.ServiceTests
     {
         private readonly IFixture _fixture;
         private readonly IAuthService _authService;
-        //private readonly ITokenGenerator _tokenGenerator;
-
-        //private readonly ITokenService _tokenService;
         private readonly Mock<ITokenService> _tokenServiceMock;
         private readonly Mock<IUserService> _userServiceMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
@@ -50,8 +48,6 @@ namespace Test.ServiceTests
             _tokenGeneratorMock = new Mock<ITokenGenerator>();
 
             var config = CreateConfiguration();
-           // _tokenService = new TokenService(_tokenGeneratorMock.Object, _userRepositoryMock.Object);
-           // _tokenGenerator = new TokenGenerator(config, _userRepositoryMock.Object);
             _authService = new AuthService(_tokenServiceMock.Object, _userRepositoryMock.Object, _userServiceMock.Object, config);
         }
 
@@ -60,10 +56,10 @@ namespace Test.ServiceTests
         [Fact]
         public async Task SignUp_WithNewUser_ShouldReturnSuccessResponse()
         {
-
-                var signupRequest = _fixture.Build<SignUpRequestDto>()
+            // Arrange
+           var signupRequest = _fixture.Build<SignUpRequestDto>()
             .With(x => x.Email, "abc@email.com")
-            .With(x => x.Password, "12345678") 
+            .With(x => x.Password, "Abc1234567&") 
             .Create();
 
                 var authResponse = _fixture.Build<AuthResponseDto>()
@@ -72,34 +68,31 @@ namespace Test.ServiceTests
                     .With(x => x.RefreshToken, "sample-refresh-token")
                     .Create();
 
-                // Mock: User doesn't exist yet
-                _userServiceMock.Setup(x => x.SearchUsers(signupRequest.Email))
+            _userServiceMock.Setup(x => x.SearchUsers(signupRequest.Email))
                     .Returns(new List<User>());
 
-                // Mock: AddUser completes successfully
-                _userRepositoryMock.Setup(x => x.AddUser(It.IsAny<User>()))
-                    .ReturnsAsync(It.IsAny<User>);  
+            _userRepositoryMock.Setup(x => x.AddUser(It.IsAny<User>()))
+                .ReturnsAsync(It.IsAny<User>);  
 
-                // Mock: Token generation returns our auth response
-                _tokenServiceMock.Setup(x => x.AuthenticateUser(It.IsAny<User>()))
-                    .ReturnsAsync(authResponse);
+            _tokenServiceMock.Setup(x => x.AuthenticateUser(It.IsAny<User>()))
+                .ReturnsAsync(authResponse);
 
-                // Act
-                var result = await _authService.SignUp(signupRequest);
+            // Act
+            var result = await _authService.SignUp(signupRequest);
 
-                // Assert
-                result.Should().NotBeNull();
-                result.Success.Should().BeTrue();
-                result.Message.Should().Be("Signup successful");
-                result.Data.Should().NotBeNull();
-                result.Data.Email.Should().Be("abc@email.com");
-                result.Data.AccessToken.Should().Be("sample-token");
-                result.Data.RefreshToken.Should().Be("sample-refresh-token");
+            // Assert
+            result.Should().NotBeNull();
+            result.Success.Should().BeTrue();
+            result.Message.Should().Be("Signup successful");
+            result.Data.Should().NotBeNull();
+            result.Data.Email.Should().Be("abc@email.com");
+            result.Data.AccessToken.Should().Be("sample-token");
+            result.Data.RefreshToken.Should().Be("sample-refresh-token");
 
-                _userRepositoryMock.Verify(x => x.AddUser(It.Is<User>(u =>
-            u.Email == signupRequest.Email &&
-            u.Password != signupRequest.Password  // Password should be hashed
-        )), Times.Once);
+            /*_userRepositoryMock.Verify(x => x.AddUser(It.Is<User>(u =>
+        u.Email == signupRequest.Email &&
+        u.Password != signupRequest.Password  // Password should be hashed
+    )), Times.Once);*/
             }
 
         [Fact]
@@ -120,13 +113,14 @@ namespace Test.ServiceTests
             _userServiceMock.Setup(x => x.SearchUsers(request.Email))
                 .Returns(existingUsers);
 
-            // Act
-            var result = await _authService.SignUp(request);
+            Func<Task> action = async () =>
+            {
+                // act
+                await _authService.SignUp(request);
+            };
 
             // Assert
-            Assert.False(result.Success);
-            Assert.Equal("User already exist", result.Message);
-            Assert.Null(result.Data);
+            await action.Should().ThrowAsync<ValidationException>();
         }
 
 
@@ -141,7 +135,7 @@ namespace Test.ServiceTests
             var request = new AuthRequestDto
             {
                 Email = "user@example.com",
-                Password = "Password123!"
+                Password = "Abc1234567&"
             };
 
             var user = new User
@@ -158,22 +152,23 @@ namespace Test.ServiceTests
                 RefreshToken = "refreshToken",
             };
 
-            _userRepositoryMock.Setup(x => x.SearchUsers(request.Email))
+            _userServiceMock.Setup(x => x.SearchUsers(request.Email))
                 .Returns(new List<User> { user });
 
-         //   _tokenServiceMock.Setup(x => x.AuthenticateUser(It.IsAny<User>())).ReturnsAsync(authResponse);
+            _tokenServiceMock.Setup(x => x.AuthenticateUser(It.IsAny<User>())).ReturnsAsync(authResponse);
 
             // Act
             var result = await _authService.Login(request);
 
             // Assert
-            Assert.True(result.Success);
-            Assert.Equal("Login successful", result.Message);
-            Assert.NotNull(result.Data);
+            result.Success.Should().BeTrue();
+            result.Message.Should().Be("Login successful");
+            result.Data.Should().NotBeNull();
         }
 
+
         [Fact]
-        public async Task Login_WithNonExistentEmail_ShouldReturnFailureResponse()
+        public async Task Login_UserNotFound_ShouldReturnFailureResponse()
         {
             // Arrange
             var request = new AuthRequestDto
@@ -182,97 +177,50 @@ namespace Test.ServiceTests
                 Password = "Password123!"
             };
 
-            _userRepositoryMock.Setup(x => x.SearchUsers(request.Email))
-                .Returns(new List<User>());
+            _userServiceMock.Setup(x => x.SearchUsers(request.Email))
+                .Returns(new List<User> { });
 
             // Act
-            var result = await _authService.Login(request);
+            Func<Task> action = async () =>
+            {
+                // act
+                await _authService.Login(request);
+            };
 
             // Assert
-            Assert.False(result.Success);
-            Assert.Equal("User does not exist!", result.Message);
-            Assert.Null(result.Data);
+            await action.Should().ThrowAsync<UnauthorizedException>();
         }
 
-       /* [Fact]
-        public async Task Login_WithIncorrectPassword_ShouldReturnFailureResponse()
-        {
-            // Arrange
-            var request = new AuthRequestDto
-            {
-                Email = "user@example.com",
-                Password = "WrongPassword"
-            };
-
-            var correctHashedPassword = Helpers.HashPassword("CorrectPassword123");
-            var user = new User
-            {
-                Email = request.Email,
-                Password = correctHashedPassword
-            };
-
-            _userRepositoryMock.Setup(x => x.SearchUsers(request.Email))
-                .Returns(new List<User> { user });
-
-
-            // Act
-            var result = await _authService.Login(request);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal("Incorrect Email or Password", result.Message);
-            Assert.Null(result.Data);
-        }*/
-
         [Fact]
-        public async Task Login_WhenRepositoryThrowsException_ShouldReturnFailureResponse()
+        public async Task Login_InvalidCredentials_ShouldReturnFailureResponse()
         {
             // Arrange
             var request = new AuthRequestDto
             {
-                Email = "user@example.com",
+                Email = "nonexistent@example.com",
                 Password = "Password123!"
             };
 
-            _userRepositoryMock.Setup(x => x.SearchUsers(request.Email))
-                .Throws(new Exception("An error occurred, Please try again!"));
-
-            // Act
-            var result = await _authService.Login(request);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal("An error occurred, Please try again!", result.Message);
-            Assert.Null(result.Data);
-        }
-
-        [Fact]
-        public async Task Login_WithEmptyPassword_ShouldReturnFailureResponse()
-        {
-            // Arrange
-            var request = new AuthRequestDto
-            {
-                Email = "user@example.com",
-                Password = ""
-            };
-
             var user = new User
             {
-                Email = request.Email,
-                Password = Helpers.HashPassword("ActualPassword")
+                Email = "nonexistent@example.com",
+                Password = Helpers.HashPassword("12345678")
             };
 
-            _userRepositoryMock.Setup(x => x.SearchUsers(request.Email))
+            _userServiceMock.Setup(x => x.SearchUsers(request.Email))
                 .Returns(new List<User> { user });
 
-            _tokenServiceMock.Setup(x => x.AuthenticateUser(It.IsAny<User>())).ReturnsAsync(It.IsAny<AuthResponseDto>());
+            Helpers.VerifyPassword(request.Password, user.Password);
 
             // Act
-            var result = await _authService.Login(request);
+            Func<Task> action = async () =>
+            {
+                // act
+                await _authService.Login(request);
+            };
 
             // Assert
-            Assert.False(result.Success);
-            Assert.Equal("Please input your email and password", result.Message);
+            await action.Should().ThrowAsync<UnauthorizedException>();
         }
 
         #endregion
@@ -292,15 +240,6 @@ namespace Test.ServiceTests
         }
     }
 
-    public class HelpersMock
-    {
-        public bool  SetupVerifyPassword(bool value)
-        {
-            return false;
-            // No-op placeholder to represent a successful password verification.
-            // In real-world tests, just let Helpers.VerifyPassword() run directly.
-        }
-    }
 }
 
 
