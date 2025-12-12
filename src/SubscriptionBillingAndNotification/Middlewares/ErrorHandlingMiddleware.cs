@@ -62,37 +62,24 @@ namespace SubscriptionBillingAndNotification.Middlewares
                     errorResponse.Message = ex.Message ?? "Unauthorized access";
                     break;
 
-                case ForbiddenException ex:
-                    response.StatusCode = (int)HttpStatusCode.Forbidden;
-                    errorResponse.Message = ex.Message ?? "Access forbidden";
-                    break;
-
-                case ArgumentException ex:
-                    response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    errorResponse.Message = ex.Message ?? "Invalid argument";
-                    break;
-
-                case InvalidOperationException ex:
-                    response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    errorResponse.Message = ex.Message ?? "Invalid operation";
-                    break;
-
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    errorResponse.Message = "An internal server error occurred. Please try again later";
+                    errorResponse.Message = "An internal server error occurred. Please try again later! ";
                     break;
             }
 
             errorResponse.StatusCode = response.StatusCode;
             errorResponse.Timestamp = DateTime.UtcNow;
 
-            // Add additional debugging info in development
             if (isDevelopment || exception.InnerException != null)
             {
+                if (errorResponse.StatusCode == (int)HttpStatusCode.InternalServerError)
+                    errorResponse.Message += exception.Message;
+
                 errorResponse.Details = new ErrorDetails
                 {
                     InnerException = exception.InnerException?.Message,
-                    StackTrace = exception.StackTrace                   
+                    StackTrace = exception.StackTrace
                 };
                 
             }
