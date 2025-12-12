@@ -28,10 +28,14 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             if (existingSub == null)
                 return subscription;
 
-            _dbContext.Subscriptions.Update(subscription);
+            existingSub.Frequency = subscription.Frequency;
+            existingSub.Pricing = subscription.Pricing;
+            existingSub.Type = subscription.Type;
+
+            _dbContext.Subscriptions.Update(existingSub);
             await _dbContext.SaveChangesAsync();
 
-            return existingSub;
+            return subscription;
         }
 
         public IEnumerable<Subscription> GetAllSubscriptions()
@@ -51,7 +55,8 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             if (existingSubscription == null)
                 return false;
 
-            _dbContext.Subscriptions.Remove(existingSubscription);
+            existingSubscription.IsDeleted = true;
+            _dbContext.Subscriptions.Update(existingSubscription);
             await _dbContext.SaveChangesAsync();
 
             return true;

@@ -10,12 +10,10 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 {
     public class SubscriptionService : ISubscriptionService
     {
-        private readonly ApplicationDbContext _dbContext;
         private readonly ISubscriptionRepository _subscriptionRepository;
 
-        public SubscriptionService(ApplicationDbContext dbContext, ISubscriptionRepository subscriptionRepository)
+        public SubscriptionService(ISubscriptionRepository subscriptionRepository)
         {
-            _dbContext = dbContext;
             _subscriptionRepository = subscriptionRepository;
         }
 
@@ -56,7 +54,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         }
 
         public async Task<BaseResponse<SubscriptionResponseDto>> GetSubscriptionById(long id)
-        {
+        { 
             var subscription = await _subscriptionRepository.GetSubscription(id)
                 ?? throw new NotFoundException("SubscriptionId Not Found!");
 
@@ -76,7 +74,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if ((int)subscription.Frequency < 1 || (int)subscription.Frequency > 3)
                 throw new ValidationException("Please input the frequency of the subscription");
 
-            var existingSubscription = GetSubscriptionById(subscription.Id);
+            var existingSubscription = await GetSubscriptionById(subscription.Id);
 
             var subscriptionEntity = ConvertToSubscriptionEntity(subscription);
 
@@ -104,7 +102,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (!isDeleted)
                 return BaseResponse<string>.Fail("Failed To Delete Subscription, Please Try Again Later!");
 
-            return BaseResponse<string>.Ok("Subscription Deleted Successfully", "Subscription Deleted Successfully");
+            return BaseResponse<string>.Ok("", "Subscription Deleted Successfully");
         }
 
 
@@ -128,6 +126,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         {
             var response = new Subscription()
             {
+                Id = subscription.Id,
                 Type = subscription.Type,
                 Pricing = subscription.Pricing,
                 Frequency = subscription.Frequency,
@@ -140,9 +139,10 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         {
             var response = new SubscriptionResponseDto
             {
+                Id = subscription.Id,
                 Type = subscription.Type,
                 Pricing = subscription.Pricing,
-                Frequency = subscription.Frequency,
+                Frequency = subscription.Frequency.ToString(),
             };
 
             return response;

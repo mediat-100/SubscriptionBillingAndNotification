@@ -17,33 +17,33 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpGet]
         [Route("Details")]
-        public ActionResult GetSubscription(long id)
+        public async Task<ActionResult> GetSubscription(long id)
         {
-            var response = _subscriptionService.GetSubscriptionById(id);
+            var response = await _subscriptionService.GetSubscriptionById(id);
             return Ok(response);
         }
 
         [HttpPost]
         [Route("Create")]
-        public IActionResult CreateSubscription(AddSubscriptionRequestDto request)
+        public async Task<IActionResult> CreateSubscription(AddSubscriptionRequestDto request)
         {
-            var response = _subscriptionService.AddSubscription(request);
+            var response = await _subscriptionService.AddSubscription(request);
             return Ok(response);
         }
 
         [HttpPut]
         [Route("Update")]
-        public IActionResult UpdateSubscription(UpdateSubscriptionRequestDto request)
+        public async Task<IActionResult> UpdateSubscription(UpdateSubscriptionRequestDto request)
         {
-            var response = _subscriptionService.UpdateSubscription(request);
+            var response = await _subscriptionService.UpdateSubscription(request);
             return Ok(response);
         }
 
         [HttpDelete]
         [Route("Delete")]
-        public IActionResult DeleteSubscription(long id)
+        public async Task<IActionResult> DeleteSubscription(long id)
         {
-            var response = _subscriptionService.DeleteSubscription(id);
+            var response = await _subscriptionService.DeleteSubscription(id);
             return Ok(response);
         }
     }

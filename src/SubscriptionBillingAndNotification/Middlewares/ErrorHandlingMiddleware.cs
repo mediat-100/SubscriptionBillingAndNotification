@@ -64,7 +64,7 @@ namespace SubscriptionBillingAndNotification.Middlewares
 
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    errorResponse.Message = "An internal server error occurred. Please try again later";
+                    errorResponse.Message = "An internal server error occurred. Please try again later! ";
                     break;
             }
 
@@ -73,11 +73,13 @@ namespace SubscriptionBillingAndNotification.Middlewares
 
             if (isDevelopment || exception.InnerException != null)
             {
-                errorResponse.Message += exception.Message;
+                if (errorResponse.StatusCode == (int)HttpStatusCode.InternalServerError)
+                    errorResponse.Message += exception.Message;
+
                 errorResponse.Details = new ErrorDetails
                 {
                     InnerException = exception.InnerException?.Message,
-                    StackTrace = exception.StackTrace                   
+                    StackTrace = exception.StackTrace
                 };
                 
             }
