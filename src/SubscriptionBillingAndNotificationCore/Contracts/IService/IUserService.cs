@@ -1,4 +1,5 @@
-﻿using SubscriptionBillingAndNotificationCore.Entities;
+﻿using SubscriptionBillingAndNotificationCore.Dtos.Responses;
+using SubscriptionBillingAndNotificationCore.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IService
 {
     public interface IUserService
     {
-        List<User> SearchUsers(string email);
-        IEnumerable<User> GetAllUsers();
-        Task<User> GetUserById(long id);
-        Task<string> DeleteUser(long id);
+        BaseResponse<IEnumerable<User>> SearchUsers(string email);
+        BaseResponse<IEnumerable<User>> GetAllUsers();
+        Task<BaseResponse<User>> GetUserById(long id);
+        Task<BaseResponse<string>> DeleteUser(long id);
     }
 }

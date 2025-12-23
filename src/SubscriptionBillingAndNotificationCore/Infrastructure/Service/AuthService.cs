@@ -63,7 +63,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 throw new ValidationException("Password cannot contain spaces.");
 
             var existingUser = _userService.SearchUsers(email: request.Email);
-            if (existingUser.Count > 0)
+            if (existingUser.Data.Count() > 0)
                 throw new ValidationException("User already exist!");
 
             var user = new User
@@ -91,10 +91,10 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 throw new ValidationException("Please input your email and password");
 
             var existingUsers = _userService.SearchUsers(request.Email);
-            if (existingUsers.Count() == 0)
+            if (existingUsers.Data.Count() == 0)
                 throw new UnauthorizedException("Incorrect Email or Password");
 
-            var user = existingUsers.FirstOrDefault();
+            var user = existingUsers.Data.FirstOrDefault();
 
             var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
             if (!verifyPassword)

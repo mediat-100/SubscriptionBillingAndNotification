@@ -17,5 +17,6 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Context
 
         public DbSet<User> Users { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
+        public DbSet<UserSubscription> UserSubscriptions { get; set; } 
     }
 }

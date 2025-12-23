@@ -69,7 +69,7 @@ namespace Test.ServiceTests
                     .Create();
 
             _userServiceMock.Setup(x => x.SearchUsers(signupRequest.Email))
-                    .Returns(new List<User>());
+                    .Returns(BaseResponse<IEnumerable<User>>.Ok(new List<User>()));
 
             _userRepositoryMock.Setup(x => x.AddUser(It.IsAny<User>()))
                 .ReturnsAsync(It.IsAny<User>);  
@@ -111,7 +111,7 @@ namespace Test.ServiceTests
             };
 
             _userServiceMock.Setup(x => x.SearchUsers(request.Email))
-                .Returns(existingUsers);
+                .Returns(BaseResponse<IEnumerable<User>>.Ok(existingUsers));
 
             Func<Task> action = async () =>
             {
@@ -153,7 +153,7 @@ namespace Test.ServiceTests
             };
 
             _userServiceMock.Setup(x => x.SearchUsers(request.Email))
-                .Returns(new List<User> { user });
+                .Returns(BaseResponse<IEnumerable<User>>.Ok(new List<User> { user }));
 
             _tokenServiceMock.Setup(x => x.AuthenticateUser(It.IsAny<User>())).ReturnsAsync(authResponse);
 
@@ -178,7 +178,7 @@ namespace Test.ServiceTests
             };
 
             _userServiceMock.Setup(x => x.SearchUsers(request.Email))
-                .Returns(new List<User> { });
+                .Returns(BaseResponse<IEnumerable<User>>.Ok(new List<User> { }));
 
             // Act
             Func<Task> action = async () =>
@@ -208,7 +208,7 @@ namespace Test.ServiceTests
             };
 
             _userServiceMock.Setup(x => x.SearchUsers(request.Email))
-                .Returns(new List<User> { user });
+                .Returns(BaseResponse<IEnumerable<User>>.Ok(new List<User> { }));
 
             Helpers.VerifyPassword(request.Password, user.Password);
 

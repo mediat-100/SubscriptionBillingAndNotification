@@ -1,5 +1,6 @@
 ﻿using SubscriptionBillingAndNotificationCore.Contracts.IRepository;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
+using SubscriptionBillingAndNotificationCore.Dtos.Responses;
 using SubscriptionBillingAndNotificationCore.Entities;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         {
             _userRepository = userRepository;
         }
-        public async Task<string> DeleteUser(long id)
+        public async Task<BaseResponse<string>> DeleteUser(long id)
         {
             var existingUser = await GetUserById(id);
             if (existingUser != null)
@@ -28,28 +29,29 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (!isDeleted)
                 throw new Exception("An error occurred while trying to delete user");
 
-            return "User Deleted Successfully";
+            return BaseResponse<string>.Ok("", "User Deleted Successfully");
         }
 
-        public IEnumerable<User> GetAllUsers()
+        public BaseResponse<IEnumerable<User>> GetAllUsers()
         {
-            return _userRepository.GetAllUsers();
+            var users = _userRepository.GetAllUsers();
+            return BaseResponse<IEnumerable<User>>.Ok(users, "Users Fetched Successfully");
         }
 
-        public async Task<User> GetUserById(long id)
+        public async Task<BaseResponse<User>> GetUserById(long id)
         {
             var user = await _userRepository.GetUser(id);
             if (user == null)
                 throw new NotFoundException("User Id Not Found");
 
-            return user;
+            return BaseResponse<User>.Ok(user);
         }
 
-        public List<User?> SearchUsers(string email)
+        public BaseResponse<IEnumerable<User?>> SearchUsers(string email)
         {
             var users = _userRepository.SearchUsers(email);
           
-            return users;
+            return BaseResponse<IEnumerable<User?>>.Ok(users);
         }
     }
 }
