@@ -24,9 +24,9 @@ namespace SubscriptionBillingAndNotificationCore.Dtos.Responses
             return new BaseResponse<T>(true, message, data);
         }
 
-        public static BaseResponse<T> Fail(string message = "Request Failed")
+       /* public static BaseResponse<T> Fail(string message = "Request Failed")
         {
             return new BaseResponse<T>(false, message);
-        }
+        }*/
     }
 }

@@ -45,7 +45,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
 
         public async Task<Subscription?> GetSubscription(long subscriptionId)
         {
-            return await _dbContext.Subscriptions.FirstOrDefaultAsync(x => x.Id == subscriptionId && x.IsDeleted == false);
+            return await _dbContext.Subscriptions.FirstOrDefaultAsync(x => x.Id == subscriptionId && !x.IsDeleted);
         }
 
         

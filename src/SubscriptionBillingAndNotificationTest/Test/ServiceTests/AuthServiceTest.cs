@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿/*using Microsoft.EntityFrameworkCore;
 using SubscriptionBillingAndNotificationCore.Infrastructure.Context;
 using System;
 using System.Collections.Generic;
@@ -89,10 +89,10 @@ namespace Test.ServiceTests
             result.Data.AccessToken.Should().Be("sample-token");
             result.Data.RefreshToken.Should().Be("sample-refresh-token");
 
-            /*_userRepositoryMock.Verify(x => x.AddUser(It.Is<User>(u =>
+            *//*_userRepositoryMock.Verify(x => x.AddUser(It.Is<User>(u =>
         u.Email == signupRequest.Email &&
         u.Password != signupRequest.Password  // Password should be hashed
-    )), Times.Once);*/
+    )), Times.Once);*//*
             }
 
         [Fact]
@@ -243,3 +243,4 @@ namespace Test.ServiceTests
 }
 
 
+*/

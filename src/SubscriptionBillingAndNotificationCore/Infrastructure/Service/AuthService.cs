@@ -63,7 +63,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 throw new ValidationException("Password cannot contain spaces.");
 
             var existingUser = _userService.SearchUsers(email: request.Email);
-            if (existingUser.Data.Count() > 0)
+            if (existingUser.Data.Users.Count() > 0)
                 throw new ValidationException("User already exist!");
 
             var user = new User
@@ -72,7 +72,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 Lastname = request.Lastname,
                 Email = request.Email,
                 Password = Helpers.HashPassword(request.Password),
-                Status = UserStatus.Inactive,
+                Status = UserStatus.Active,
                 UserType = UserType.User
             };
 
@@ -90,12 +90,12 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
                 throw new ValidationException("Please input your email and password");
 
-            var existingUsers = _userService.SearchUsers(request.Email);
-            if (existingUsers.Data.Count() == 0)
+            var existingUsers = _userService.SearchUsers(request.Email, status: 1);
+            if (existingUsers.Data.Users.Count() == 0)
                 throw new UnauthorizedException("Incorrect Email or Password");
 
-            var user = existingUsers.Data.FirstOrDefault();
-
+            var userFound = existingUsers.Data.Users.FirstOrDefault();
+            var user = await _userRepository.GetUser(userFound.Id);
             var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
             if (!verifyPassword)
                 throw new UnauthorizedException("Incorrect Email or Password!");
@@ -106,6 +106,11 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             
         }
 
+        public async Task<BaseResponse<RefreshTokenResponseDto>> RefreshToken(RefreshTokenRequestDto request)
+        {
+            var response = await _tokenService.RefreshToken(request);
+            return BaseResponse<RefreshTokenResponseDto>.Ok(response);
+        }
 
         
     }

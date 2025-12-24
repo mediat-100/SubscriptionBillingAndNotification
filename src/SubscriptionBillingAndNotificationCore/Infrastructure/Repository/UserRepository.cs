@@ -2,11 +2,6 @@
 using SubscriptionBillingAndNotificationCore.Contracts.IRepository;
 using SubscriptionBillingAndNotificationCore.Entities;
 using SubscriptionBillingAndNotificationCore.Infrastructure.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
 {
@@ -18,6 +13,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
         {
             _dbContext = dbContext;
         }
+
         public async Task<User> AddUser(User user)
         {
             _dbContext.Users.Add(user);
@@ -26,26 +22,26 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return user;      
         }
 
-        public IEnumerable<User> GetAllUsers()
+        public IEnumerable<User> GetAllUsers(int pageNumber = 1, int pageSize = 10)
         {
-            return _dbContext.Users.ToList().AsEnumerable();
+            return _dbContext.Users.Skip((pageNumber - 1) * pageSize).Take(pageSize).AsEnumerable();
         }
 
         public async Task<User?> GetUser(long userId)
         {
-            return await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId && x.IsDeleted == false);
+            return await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Status == Enums.UserStatus.Active && !x.IsDeleted);
         }
 
-        public async Task<User> UpdateUser(User user)
+        public async Task<User?> UpdateUser(User user)
         {
             var existingUser = await GetUser(user.Id);
             if (existingUser == null)
-                return user;
+                return null;
 
-            _dbContext.Users.Update(existingUser);
+            _dbContext.Users.Update(user);
             await _dbContext.SaveChangesAsync();
 
-            return existingUser;
+            return user;
         }
 
         public async Task<bool> DeleteUser(long userId)
@@ -54,17 +50,31 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             if (existingUser == null)
                 return false;
 
-            _dbContext.Users.Remove(existingUser);
+            existingUser.IsDeleted = true;
+
+            _dbContext.Users.Update(existingUser);
             await _dbContext.SaveChangesAsync();
 
             return true;
         }
 
-        public List<User> SearchUsers(string email)
+        public IEnumerable<User> SearchUsers(string? email, int status = 2, int userType = 2, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
-                List<User> result = _dbContext.Users.Where(x => x.Email == email).ToList();
+                IQueryable<User> query = _dbContext.Users;
+
+                if (!string.IsNullOrWhiteSpace(email))
+                    query = query.Where(x => x.Email == email);
+
+                if (status > 0)
+                    query = query.Where(x => (int)x.Status == status);
+
+                if (userType > 0)
+                    query = query.Where(x => (int)x.UserType == userType);
+
+                var result = query.Skip((pageNumber - 1) * pageSize).Take(pageSize).AsEnumerable();
+
                 return result;
             }
             catch(Exception ex)

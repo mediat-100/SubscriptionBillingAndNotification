@@ -100,7 +100,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             var isDeleted = await _subscriptionRepository.DeleteSubscription(id);
             
             if (!isDeleted)
-                return BaseResponse<string>.Fail("Failed To Delete Subscription, Please Try Again Later!");
+                throw new Exception("Failed To Delete Subscription, Please Try Again Later!");
 
             return BaseResponse<string>.Ok("", "Subscription Deleted Successfully");
         }

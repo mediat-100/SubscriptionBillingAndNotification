@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SubscriptionBillingAndNotificationCore.Contracts.IRepository;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
+using SubscriptionBillingAndNotificationCore.Dtos.Requests;
 using SubscriptionBillingAndNotificationCore.Dtos.Responses;
 using SubscriptionBillingAndNotificationCore.Entities;
 using SubscriptionBillingAndNotificationCore.Utilities.Settings;
@@ -21,12 +22,13 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         private readonly string? _audience;
         private readonly IConfiguration _configuration;
         private readonly IUserRepository _userRepository;
+        private readonly IUserService _userService;
 
-        public TokenService(IConfiguration configuration, IUserRepository userRepository)
+        public TokenService(IConfiguration configuration, IUserRepository userRepository, IUserService userService)
         {
             // _tokenGenerator = tokenGenerator;
             _userRepository = userRepository;
-
+            _userService = userService;
             _configuration = configuration;
             _userRepository = userRepository;
             _secretKey = _configuration.GetSection("Jwt")["Key"];
@@ -41,10 +43,12 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             // generate token and refresh token
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.Id.ToString()),
+                //new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.UserType.ToString())
             };
-            string accessToken = GenerateAccessToken(claims);
+
+            var generateAccessToken = GenerateAccessToken(claims);
             string refreshToken = GenerateRefreshToken();
 
             // update refresh token expiry time
@@ -55,14 +59,49 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             {
                 Email = user.Email,
                 UserId = user.Id,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
+                AccessToken = generateAccessToken.AccessToken,
+                AccessTokenExpiresAt = generateAccessToken.AccessTokenExpiresAt,
+                RefreshToken = refreshToken
             };
 
             return response;
         }
 
-        private string GenerateAccessToken(IEnumerable<Claim> claims)
+        public async Task<RefreshTokenResponseDto> RefreshToken(RefreshTokenRequestDto request)
+        {
+            var principal = GetPrincipalFromExpiredToken(request.AccessToken);
+            var userId = principal.Identity.Name;
+            var user = await _userService.GetUserById(int.Parse(userId));
+            if (!(user.Data.Id >= 0))
+                throw new Exception("Invalid user!");
+
+            if (user.Data.RefreshToken != null && user.Data.RefreshTokenExpiryTime < DateTime.UtcNow)
+                throw new Exception("Invalid Refresh Token!");
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Data.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Data.UserType.ToString())
+            };
+
+            var accessToken = GenerateAccessToken(claims);
+            var refreshToken = GenerateRefreshToken();
+
+            var updateUserRequest = new UpdateUserRequestDto
+            {
+                Id = user.Data.Id,
+                Firstname = user.Data.Firstname,
+                Lastname = user.Data.Lastname,
+                RefreshToken = refreshToken,
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(15),
+            };
+
+            var updatedUser = await _userService.UpdateUser(updateUserRequest);
+ 
+            return new RefreshTokenResponseDto { AccessToken = accessToken.AccessToken, AccessTokenExpiresAt = accessToken.AccessTokenExpiresAt, RefreshToken = refreshToken };
+        }
+
+        private AccessTokenResponse GenerateAccessToken(IEnumerable<Claim> claims)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -75,7 +114,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 signingCredentials: creds
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return new AccessTokenResponse { AccessToken  = accessToken, AccessTokenExpiresAt = token.ValidTo };
         }
 
         private string GenerateRefreshToken()
@@ -94,7 +135,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
-                ValidateLifetime = false
+                ValidateLifetime = false,
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
