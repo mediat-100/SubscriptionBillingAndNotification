@@ -12,8 +12,9 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IRepository
         Task<User> AddUser(User user);
         Task<User?> UpdateUser(User user);
         Task<User?> GetUser(long userId);
+        Task<User?> GetUserByEmail(string email);
         IEnumerable<User> GetAllUsers(int pageNumber = 1, int pageSize = 10);
         Task<bool> DeleteUser(long userId);
-        IEnumerable<User> SearchUsers(string? email, int status = 2, int userType = 2, int pageNumber = 1, int pageSize = 10);
+        IEnumerable<User> SearchUsers(string? email, int status = 1, int userType = 2, int pageNumber = 1, int pageSize = 10);
     }
 }

@@ -55,7 +55,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             return BaseResponse<UserResponseDto>.Ok(userResponseDto, "User Fetched Successfully");
         }
 
-        public BaseResponse<PagedUserResponseDto> SearchUsers(string? email, int status, int userType, int pageNumber = 1, int pageSize = 10)
+        public BaseResponse<PagedUserResponseDto> SearchUsers(string? email, int status = 1, int userType = 2, int pageNumber = 1, int pageSize = 10)
         {
             var users = _userRepository.SearchUsers(email, status, userType, pageNumber, pageSize);
             var result = users.Select(x => ConvertToUserResponseDto(x));

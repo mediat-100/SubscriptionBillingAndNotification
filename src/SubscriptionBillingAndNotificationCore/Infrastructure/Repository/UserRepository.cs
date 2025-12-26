@@ -32,6 +32,11 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Status == Enums.UserStatus.Active && !x.IsDeleted);
         }
 
+        public async Task<User?> GetUserByEmail(string email)
+        {
+            return await _dbContext.Users.FirstOrDefaultAsync(x => x.Email == email && x.Status == Enums.UserStatus.Active && !x.IsDeleted);
+        }
+
         public async Task<User?> UpdateUser(User user)
         {
             var existingUser = await GetUser(user.Id);
@@ -58,7 +63,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return true;
         }
 
-        public IEnumerable<User> SearchUsers(string? email, int status = 2, int userType = 2, int pageNumber = 1, int pageSize = 10)
+        public IEnumerable<User> SearchUsers(string? email, int status = 1, int userType = 2, int pageNumber = 1, int pageSize = 10)
         {
             try
             {

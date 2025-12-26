@@ -78,7 +78,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
             var userResp = await _userRepository.AddUser(user);
 
-            //TODO: 1) SEND CONFIRMATION MAIL TO USER AND NOT AUTHENTICATE, 2) AUTHENTICATE VIA OAUTH
+            //TODO: 1) SEND CONFIRMATION MAIL TO USER AND ACTIVATE USER AFTER EMAIL CONFIRMATION, 2) AUTHENTICATE VIA OAUTH
             var authResponse = await _tokenService.AuthenticateUser(user);
 
             return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
@@ -90,12 +90,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
                 throw new ValidationException("Please input your email and password");
 
-            var existingUsers = _userService.SearchUsers(request.Email, status: 1);
-            if (existingUsers.Data.Users.Count() == 0)
+            var user = await _userRepository.GetUserByEmail(request.Email) ??
                 throw new UnauthorizedException("Incorrect Email or Password");
-
-            var userFound = existingUsers.Data.Users.FirstOrDefault();
-            var user = await _userRepository.GetUser(userFound.Id);
+            
             var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
             if (!verifyPassword)
                 throw new UnauthorizedException("Incorrect Email or Password!");

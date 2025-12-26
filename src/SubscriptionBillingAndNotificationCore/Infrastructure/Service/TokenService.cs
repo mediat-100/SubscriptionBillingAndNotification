@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using static SubscriptionBillingAndNotificationCore.Utilities.CustomExceptions;
 
 namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 {
@@ -52,7 +53,8 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             string refreshToken = GenerateRefreshToken();
 
             // update refresh token expiry time
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(15);
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(1);
             await _userRepository.UpdateUser(user);
 
             var response = new AuthResponseDto
@@ -70,35 +72,20 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         public async Task<RefreshTokenResponseDto> RefreshToken(RefreshTokenRequestDto request)
         {
             var principal = GetPrincipalFromExpiredToken(request.AccessToken);
-            var userId = principal.Identity.Name;
-            var user = await _userService.GetUserById(int.Parse(userId));
-            if (!(user.Data.Id >= 0))
-                throw new Exception("Invalid user!");
+            var userId = int.Parse(principal.Identity.Name);
+            var user = await _userRepository.GetUser(userId);
+            if (!(user.Id >= 0))
+                throw new UnauthorizedException("Invalid user!");
 
-            if (user.Data.RefreshToken != null && user.Data.RefreshTokenExpiryTime < DateTime.UtcNow)
-                throw new Exception("Invalid Refresh Token!");
+            if (string.IsNullOrWhiteSpace(user.RefreshToken))
+                throw new UnauthorizedException("Refresh Token Not Found!");
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Data.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Data.UserType.ToString())
-            };
+            if (!string.Equals(user.RefreshToken, request.RefreshToken) || user.RefreshTokenExpiryTime < DateTime.UtcNow)
+                throw new UnauthorizedException("Invalid Refresh Token!");
 
-            var accessToken = GenerateAccessToken(claims);
-            var refreshToken = GenerateRefreshToken();
-
-            var updateUserRequest = new UpdateUserRequestDto
-            {
-                Id = user.Data.Id,
-                Firstname = user.Data.Firstname,
-                Lastname = user.Data.Lastname,
-                RefreshToken = refreshToken,
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(15),
-            };
-
-            var updatedUser = await _userService.UpdateUser(updateUserRequest);
+            var authenticateResponse = await AuthenticateUser(user);
  
-            return new RefreshTokenResponseDto { AccessToken = accessToken.AccessToken, AccessTokenExpiresAt = accessToken.AccessTokenExpiresAt, RefreshToken = refreshToken };
+            return new RefreshTokenResponseDto { AccessToken = authenticateResponse.AccessToken, AccessTokenExpiresAt = authenticateResponse.AccessTokenExpiresAt, RefreshToken = authenticateResponse.RefreshToken };
         }
 
         private AccessTokenResponse GenerateAccessToken(IEnumerable<Claim> claims)
@@ -110,7 +97,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 issuer: _issuer,
                 audience: _audience,
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(10),
+                expires: DateTime.UtcNow.AddMinutes(1), //CHANGE AFTER TEST!
                 signingCredentials: creds
             );
 
