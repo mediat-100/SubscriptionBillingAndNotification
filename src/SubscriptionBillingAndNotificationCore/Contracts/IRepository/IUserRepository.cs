@@ -10,10 +10,10 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IRepository
     public interface IUserRepository
     {
         Task<User> AddUser(User user);
-        Task<User> UpdateUser(User user);
+        Task<User?> UpdateUser(User user);
         Task<User?> GetUser(long userId);
-        IEnumerable<User> GetAllUsers();
+        Task<User?> GetUserByEmail(string email);
         Task<bool> DeleteUser(long userId);
-        List<User> SearchUsers(string email);
+        IEnumerable<User> SearchUsers(string? email, int? status = 1, int? userType = 2, int? isDeleted = 0, int pageNumber = 1, int pageSize = 10);
     }
 }

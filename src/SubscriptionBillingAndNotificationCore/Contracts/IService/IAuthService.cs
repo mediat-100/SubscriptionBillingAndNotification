@@ -12,5 +12,6 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IService
     {
         Task<BaseResponse<AuthResponseDto>> SignUp(SignUpRequestDto request);
         Task<BaseResponse<AuthResponseDto>> Login(AuthRequestDto request);
+        Task<BaseResponse<RefreshTokenResponseDto>> RefreshToken(RefreshTokenRequestDto request); 
     }
 }

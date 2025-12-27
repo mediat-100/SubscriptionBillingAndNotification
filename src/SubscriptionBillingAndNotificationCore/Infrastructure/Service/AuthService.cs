@@ -63,7 +63,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 throw new ValidationException("Password cannot contain spaces.");
 
             var existingUser = _userService.SearchUsers(email: request.Email);
-            if (existingUser.Count > 0)
+            if (existingUser.Data.Users.Count() > 0)
                 throw new ValidationException("User already exist!");
 
             var user = new User
@@ -72,13 +72,13 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 Lastname = request.Lastname,
                 Email = request.Email,
                 Password = Helpers.HashPassword(request.Password),
-                Status = UserStatus.Inactive,
+                Status = UserStatus.Active,
                 UserType = UserType.User
             };
 
             var userResp = await _userRepository.AddUser(user);
 
-            //TODO: 1) SEND CONFIRMATION MAIL TO USER AND NOT AUTHENTICATE, 2) AUTHENTICATE VIA OAUTH
+            //TODO: 1) SEND CONFIRMATION MAIL TO USER AND ACTIVATE USER AFTER EMAIL CONFIRMATION, 2) AUTHENTICATE VIA OAUTH
             var authResponse = await _tokenService.AuthenticateUser(user);
 
             return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
@@ -90,12 +90,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
                 throw new ValidationException("Please input your email and password");
 
-            var existingUsers = _userService.SearchUsers(request.Email);
-            if (existingUsers.Count() == 0)
+            var user = await _userRepository.GetUserByEmail(request.Email) ??
                 throw new UnauthorizedException("Incorrect Email or Password");
-
-            var user = existingUsers.FirstOrDefault();
-
+            
             var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
             if (!verifyPassword)
                 throw new UnauthorizedException("Incorrect Email or Password!");
@@ -106,6 +103,11 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             
         }
 
+        public async Task<BaseResponse<RefreshTokenResponseDto>> RefreshToken(RefreshTokenRequestDto request)
+        {
+            var response = await _tokenService.RefreshToken(request);
+            return BaseResponse<RefreshTokenResponseDto>.Ok(response);
+        }
 
         
     }

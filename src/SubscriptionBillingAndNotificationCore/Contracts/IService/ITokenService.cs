@@ -1,4 +1,5 @@
-﻿using SubscriptionBillingAndNotificationCore.Dtos.Responses;
+﻿using SubscriptionBillingAndNotificationCore.Dtos.Requests;
+using SubscriptionBillingAndNotificationCore.Dtos.Responses;
 using SubscriptionBillingAndNotificationCore.Entities;
 using System;
 using System.Collections.Generic;
@@ -12,5 +13,6 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IService
     public interface ITokenService
     {
         Task<AuthResponseDto> AuthenticateUser(User user);
+        Task<RefreshTokenResponseDto> RefreshToken(RefreshTokenRequestDto request);
     }
 }

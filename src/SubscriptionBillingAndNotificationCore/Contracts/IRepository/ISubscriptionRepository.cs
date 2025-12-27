@@ -12,8 +12,7 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IRepository
         Task<Subscription> AddSubscription(Subscription subscription);
         Task<Subscription> UpdateSubscription(Subscription subscription);
         Task<Subscription?> GetSubscription(long subscriptionId);
-        IEnumerable<Subscription> GetAllSubscriptions();
         Task<bool> DeleteSubscription(long subscriptionId);
-        List<Subscription> SearchSubscriptions(string type);
+        IEnumerable<Subscription> SearchSubscriptions(string? type, int? isDeleted = 0, int pageNumber = 1, int pageSize = 10);
     }
 }

@@ -38,14 +38,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return subscription;
         }
 
-        public IEnumerable<Subscription> GetAllSubscriptions()
-        {
-            return _dbContext.Subscriptions.ToList().AsEnumerable();
-        }
-
         public async Task<Subscription?> GetSubscription(long subscriptionId)
         {
-            return await _dbContext.Subscriptions.FirstOrDefaultAsync(x => x.Id == subscriptionId && x.IsDeleted == false);
+            return await _dbContext.Subscriptions.FirstOrDefaultAsync(x => x.Id == subscriptionId && !x.IsDeleted);
         }
 
         
@@ -62,9 +57,17 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return true;
         }
 
-        public List<Subscription> SearchSubscriptions(string type)
+        public IEnumerable<Subscription> SearchSubscriptions(string? type, int? isDeleted = 0, int pageNumber = 1, int pageSize = 10)
         {
-            List<Subscription> result = _dbContext.Subscriptions.Where(x => x.Type == type && !x.IsDeleted).ToList();
+            IQueryable<Subscription> query = _dbContext.Subscriptions;
+
+            if (string.IsNullOrWhiteSpace(type))
+                query = query.Where(x => x.Type == type);
+
+            if (isDeleted.HasValue && isDeleted == 1)
+                query = query.Where(x => x.IsDeleted);
+           
+            var result = query.Skip((pageNumber -1) * pageSize).Take(pageSize).AsEnumerable();
 
             return result;
         }
