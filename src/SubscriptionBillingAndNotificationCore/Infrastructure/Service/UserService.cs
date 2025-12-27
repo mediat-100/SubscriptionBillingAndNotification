@@ -28,26 +28,12 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (!isDeleted)
                 throw new Exception("An error occurred while trying to delete user");
 
-            return BaseResponse<string>.Ok("User Deleted Successfully");
-        }
-
-        public BaseResponse<PagedUserResponseDto> GetAllUsers(int pageNumber = 1, int pageSize = 10)
-        {
-            var users = _userRepository.GetAllUsers(pageNumber, pageSize);
-            var usersResponseDto = users.Select(x => ConvertToUserResponseDto(x));
-            var pagedResponse = new PagedUserResponseDto
-            {
-                Users = usersResponseDto,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-            return BaseResponse<PagedUserResponseDto>.Ok(pagedResponse, "Users Fetched Successfully");
+            return BaseResponse<string>.Ok("", "User Deleted Successfully");
         }
 
         public async Task<BaseResponse<UserResponseDto>> GetUserById(long id)
         {
-            var user = await _userRepository.GetUser(id);
-            if (user == null)
+            var user = await _userRepository.GetUser(id) ??
                 throw new NotFoundException("User Id Not Found");
 
             var userResponseDto = ConvertToUserResponseDto(user);
@@ -55,9 +41,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             return BaseResponse<UserResponseDto>.Ok(userResponseDto, "User Fetched Successfully");
         }
 
-        public BaseResponse<PagedUserResponseDto> SearchUsers(string? email, int status = 1, int userType = 2, int pageNumber = 1, int pageSize = 10)
+        public BaseResponse<PagedUserResponseDto> SearchUsers(string? email, int? status = 1, int? userType = 2, int pageNumber = 1, int pageSize = 10)
         {
-            var users = _userRepository.SearchUsers(email, status, userType, pageNumber, pageSize);
+            var users = _userRepository.SearchUsers(email, status, userType, pageNumber: pageNumber, pageSize: pageSize);
             var result = users.Select(x => ConvertToUserResponseDto(x));
             var response = new PagedUserResponseDto { Users = result, PageNumber = pageNumber, PageSize = pageSize};
 
@@ -66,8 +52,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
         public async Task<BaseResponse<UserResponseDto>> UpdateUser(UpdateUserRequestDto request)
         {
-            var user = await _userRepository.GetUser(request.Id);
-            if (user == null)
+            var user = await _userRepository.GetUser(request.Id) ??
                 throw new NotFoundException("User Not Found!");
 
             user.Firstname = request.Firstname;
@@ -86,6 +71,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 Firstname = updatedUser.Firstname,
                 Lastname = updatedUser.Lastname,
                 Status = updatedUser.Status,
+                UserType = updatedUser.UserType,
                 RefreshToken = updatedUser.RefreshToken,
                 RefreshTokenExpiryTime = updatedUser.RefreshTokenExpiryTime,
             };
@@ -103,6 +89,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 Firstname = user.Firstname,
                 Lastname = user.Lastname,
                 Status = user.Status,
+                UserType = user.UserType,
                 RefreshToken = user.RefreshToken,
                 RefreshTokenExpiryTime = user.RefreshTokenExpiryTime,
             };

@@ -22,11 +22,6 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return user;      
         }
 
-        public IEnumerable<User> GetAllUsers(int pageNumber = 1, int pageSize = 10)
-        {
-            return _dbContext.Users.Skip((pageNumber - 1) * pageSize).Take(pageSize).AsEnumerable();
-        }
-
         public async Task<User?> GetUser(long userId)
         {
             return await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Status == Enums.UserStatus.Active && !x.IsDeleted);
@@ -63,7 +58,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return true;
         }
 
-        public IEnumerable<User> SearchUsers(string? email, int status = 1, int userType = 2, int pageNumber = 1, int pageSize = 10)
+        public IEnumerable<User> SearchUsers(string? email, int? status = 1, int? userType = 2, int? isDeleted = 0, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
@@ -77,6 +72,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
 
                 if (userType > 0)
                     query = query.Where(x => (int)x.UserType == userType);
+
+                if (isDeleted.HasValue && isDeleted == 1)
+                    query = query.Where(x => x.IsDeleted);
 
                 var result = query.Skip((pageNumber - 1) * pageSize).Take(pageSize).AsEnumerable();
 

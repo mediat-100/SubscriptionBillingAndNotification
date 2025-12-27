@@ -31,7 +31,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             var existingSubscription = _subscriptionRepository.SearchSubscriptions(subscription.Type);
 
             if (existingSubscription.Count() > 0)
-                throw new ValidationException("Subscription already exist!");
+                throw new ValidationException("Subscription Type already exist!");
 
             var newSubscription = ConvertToSubscriptionEntity(subscription);
 
@@ -40,17 +40,6 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             var response = ConvertToSubscriptionResponseDto(newSubscription);
 
             return BaseResponse<SubscriptionResponseDto>.Ok(response, "Subscription Created Successfully"); 
-        }
-
-        public BaseResponse<IEnumerable<SubscriptionResponseDto>> GetAllSubscriptions()
-        {
-            var subscriptions = _subscriptionRepository.GetAllSubscriptions();
-
-            var response = subscriptions.Select(x => ConvertToSubscriptionResponseDto(x));
-
-            return BaseResponse<IEnumerable<SubscriptionResponseDto>>.Ok(response);
-
-            // TODO: Implement pagination
         }
 
         public async Task<BaseResponse<SubscriptionResponseDto>> GetSubscriptionById(long id)
@@ -86,12 +75,12 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         }
        
 
-        public BaseResponse<IEnumerable<SubscriptionResponseDto>> SearchSubscriptions(string type)
+        public BaseResponse<IEnumerable<SubscriptionResponseDto>> SearchSubscriptions(string? type, int pageNumber = 10, int pageSize = 1)
         {
-            var subscriptions = _subscriptionRepository.SearchSubscriptions(type);
+            var subscriptions = _subscriptionRepository.SearchSubscriptions(type, pageNumber, pageSize);
             IEnumerable<SubscriptionResponseDto> response = subscriptions.Select(x => ConvertToSubscriptionResponseDto(x));
 
-            return BaseResponse<IEnumerable<SubscriptionResponseDto>>.Ok(response);
+            return BaseResponse<IEnumerable<SubscriptionResponseDto>>.Ok(response, "Fetched Subscriptions Successfully");
         }
 
         public async Task<BaseResponse<string>> DeleteSubscription(long id)

@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
+using SubscriptionBillingAndNotificationCore.Dtos.Requests;
 
 namespace SubscriptionBillingAndNotification.Controllers
 {
@@ -17,7 +19,7 @@ namespace SubscriptionBillingAndNotification.Controllers
        
 
         [HttpGet]
-        [Route("User")]
+        [Route("Details")]
         public async Task<IActionResult> Get(long id)
         {
             var response = await _userService.GetUserById(id);
@@ -25,17 +27,10 @@ namespace SubscriptionBillingAndNotification.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAllUsers(int pageNumber = 1, int pageSize = 10)
-        {
-            var response = _userService.GetAllUsers(pageNumber, pageSize);
-            return Ok(response);
-        }
-
-        [HttpGet]
         [Route("Search")]
-        public IActionResult Search(string? email, int status, int pageSize = 1, int pageNumber = 10)
+        public IActionResult Search(string? email, int? status, int? userType, int pageNumber = 1, int pageSize = 10)
         {
-            var response = _userService.SearchUsers(email, status, pageSize: pageSize, pageNumber: pageNumber);
+            var response = _userService.SearchUsers(email, status, userType, pageNumber, pageSize);
             return Ok(response);
         }
 
@@ -47,7 +42,13 @@ namespace SubscriptionBillingAndNotification.Controllers
             return Ok(response);
         }
 
-      
+        [HttpPut]
+        [Route("Update")]
+        public async Task<IActionResult> Update(UpdateUserRequestDto request)
+        {
+            var response = await _userService.UpdateUser(request);
+            return Ok(response);
+        }
 
 
     }
