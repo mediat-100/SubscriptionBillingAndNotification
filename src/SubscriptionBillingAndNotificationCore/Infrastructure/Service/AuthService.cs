@@ -24,16 +24,19 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         private readonly IUserRepository _userRepository;
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
         private readonly string? secretkey;
         private readonly string? issuer;
         private readonly string? audience;
 
-        public AuthService(ITokenService tokenService, IUserRepository userRepository, IUserService userService, IConfiguration configuration)
+        public AuthService(ITokenService tokenService, IUserRepository userRepository, IUserService userService, IConfiguration configuration
+            , IEmailService emailService)
         {
             _tokenService = tokenService;
             _userRepository = userRepository;
             _userService = userService;
             _configuration = configuration;
+            _emailService = emailService;
             secretkey = _configuration.GetSection("Jwt")["secretkey"];
             issuer = _configuration.GetSection("Jwt")["issuer"];
             audience = _configuration.GetSection("Jwt")["audience"];
@@ -80,6 +83,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
             //TODO: 1) SEND CONFIRMATION MAIL TO USER AND ACTIVATE USER AFTER EMAIL CONFIRMATION, 2) AUTHENTICATE VIA OAUTH
             var authResponse = await _tokenService.AuthenticateUser(user);
+
+            // send
+            _emailService.SendEmail("mediatyusuff@gmail.com", "Registration Successful", "Your sign up was successful");
 
             return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
            
