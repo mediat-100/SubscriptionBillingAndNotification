@@ -17,25 +17,25 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpPost]
         [Route("Signup")]
-        public async Task<IActionResult> Signup(SignUpRequestDto request)
+        public async Task<IActionResult> Signup(SignUpRequestDto request, CancellationToken cancellationToken)
         {                
-            var response = await _authService.SignUp(request);
+            var response = await _authService.SignUp(request, cancellationToken);
             return Ok(response);
         }
 
         [HttpPost]
         [Route("Login")]
-        public async Task<IActionResult> Login(AuthRequestDto request)
+        public async Task<IActionResult> Login(AuthRequestDto request, CancellationToken cancellationToken)
         {
-            var response = await _authService.Login(request);
+            var response = await _authService.Login(request, cancellationToken);
             return Ok(response);
         }
 
         [HttpPost]
         [Route("Refresh")]
-        public async Task<IActionResult> RefreshToken(RefreshTokenRequestDto request)
+        public async Task<IActionResult> RefreshToken(RefreshTokenRequestDto request, CancellationToken cancellationToken)
         {
-            var response = await _authService.RefreshToken(request);
+            var response = await _authService.RefreshToken(request, cancellationToken);
             return Ok(response);
         }
     }

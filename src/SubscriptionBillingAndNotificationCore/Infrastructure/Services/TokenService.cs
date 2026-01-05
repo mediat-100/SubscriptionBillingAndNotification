@@ -39,7 +39,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
         }
 
-        public async Task<AuthResponseDto> AuthenticateUser(User user)
+        public async Task<AuthResponseDto> AuthenticateUser(User user, CancellationToken cancellationToken)
         {
             // generate token and refresh token
             var claims = new List<Claim>
@@ -55,7 +55,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             // update refresh token expiry time
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(1);
-            await _userRepository.UpdateUser(user);
+            await _userRepository.UpdateUser(user, cancellationToken);
 
             var response = new AuthResponseDto
             {
@@ -69,11 +69,11 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             return response;
         }
 
-        public async Task<RefreshTokenResponseDto> RefreshToken(RefreshTokenRequestDto request)
+        public async Task<RefreshTokenResponseDto> RefreshToken(RefreshTokenRequestDto request, CancellationToken cancellationToken)
         {
             var principal = GetPrincipalFromExpiredToken(request.AccessToken);
             var userId = int.Parse(principal.Identity.Name);
-            var user = await _userRepository.GetUser(userId);
+            var user = await _userRepository.GetUser(userId, cancellationToken);
             if (!(user.Id >= 0))
                 throw new UnauthorizedException("Invalid user!");
 
@@ -83,7 +83,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (!string.Equals(user.RefreshToken, request.RefreshToken) || user.RefreshTokenExpiryTime < DateTime.UtcNow)
                 throw new UnauthorizedException("Invalid Refresh Token!");
 
-            var authenticateResponse = await AuthenticateUser(user);
+            var authenticateResponse = await AuthenticateUser(user, cancellationToken);
  
             return new RefreshTokenResponseDto { AccessToken = authenticateResponse.AccessToken, AccessTokenExpiresAt = authenticateResponse.AccessTokenExpiresAt, RefreshToken = authenticateResponse.RefreshToken };
         }

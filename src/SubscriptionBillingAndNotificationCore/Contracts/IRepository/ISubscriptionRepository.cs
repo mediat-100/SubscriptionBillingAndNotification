@@ -9,10 +9,10 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IRepository
 {
     public interface ISubscriptionRepository
     {
-        Task<Subscription> AddSubscription(Subscription subscription);
-        Task<Subscription> UpdateSubscription(Subscription subscription);
-        Task<Subscription?> GetSubscription(long subscriptionId);
-        Task<bool> DeleteSubscription(long subscriptionId);
+        Task<Subscription> AddSubscription(Subscription subscription, CancellationToken cancellationToken);
+        Task<Subscription> UpdateSubscription(Subscription subscription, CancellationToken cancellationToken);
+        Task<Subscription?> GetSubscription(long subscriptionId, CancellationToken cancellationToken);
+        Task<bool> DeleteSubscription(long subscriptionId, CancellationToken cancellationToken);
         IEnumerable<Subscription> SearchSubscriptions(string? type, int? isDeleted = 0, int pageNumber = 1, int pageSize = 10);
     }
 }

@@ -20,9 +20,9 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpGet]
         [Route("Details")]
-        public async Task<IActionResult> Get(long id)
+        public async Task<IActionResult> Get(long id, CancellationToken cancellationToken)
         {
-            var response = await _userService.GetUserById(id);
+            var response = await _userService.GetUserById(id, cancellationToken);
             return Ok(response);
         }
 
@@ -36,17 +36,17 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpDelete]
         [Route("Delete")]
-        public async Task<IActionResult> Delete(long id)
+        public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken)
         {
-            var response = await _userService.DeleteUser(id);
+            var response = await _userService.DeleteUser(id, cancellationToken);
             return Ok(response);
         }
 
         [HttpPut]
         [Route("Update")]
-        public async Task<IActionResult> Update(UpdateUserRequestDto request)
+        public async Task<IActionResult> Update(UpdateUserRequestDto request, CancellationToken cancellationToken)
         {
-            var response = await _userService.UpdateUser(request);
+            var response = await _userService.UpdateUser(request, cancellationToken);
             return Ok(response);
         }
 

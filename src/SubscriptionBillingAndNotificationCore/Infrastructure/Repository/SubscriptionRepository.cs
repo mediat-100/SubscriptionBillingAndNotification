@@ -14,17 +14,17 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             _dbContext = dbContext;
         }
 
-        public async Task<Subscription> AddSubscription(Subscription subscription)
+        public async Task<Subscription> AddSubscription(Subscription subscription, CancellationToken cancellationToken)
         {
             _dbContext.Subscriptions.Add(subscription);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return subscription;
         }
 
-        public async Task<Subscription> UpdateSubscription(Subscription subscription)
+        public async Task<Subscription> UpdateSubscription(Subscription subscription, CancellationToken cancellationToken)
         {
-            var existingSub = await GetSubscription(subscription.Id);
+            var existingSub = await GetSubscription(subscription.Id, cancellationToken);
             if (existingSub == null)
                 return subscription;
 
@@ -33,26 +33,26 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             existingSub.Type = subscription.Type;
 
             _dbContext.Subscriptions.Update(existingSub);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return subscription;
         }
 
-        public async Task<Subscription?> GetSubscription(long subscriptionId)
+        public async Task<Subscription?> GetSubscription(long subscriptionId, CancellationToken cancellationToken)
         {
-            return await _dbContext.Subscriptions.FirstOrDefaultAsync(x => x.Id == subscriptionId && !x.IsDeleted);
+            return await _dbContext.Subscriptions.FirstOrDefaultAsync(x => x.Id == subscriptionId && !x.IsDeleted, cancellationToken);
         }
 
         
-        public async Task<bool> DeleteSubscription(long subscriptionId)
+        public async Task<bool> DeleteSubscription(long subscriptionId, CancellationToken cancellationToken)
         {
-            var existingSubscription = await GetSubscription(subscriptionId);
+            var existingSubscription = await GetSubscription(subscriptionId, cancellationToken);
             if (existingSubscription == null)
                 return false;
 
             existingSubscription.IsDeleted = true;
             _dbContext.Subscriptions.Update(existingSubscription);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return true;
         }

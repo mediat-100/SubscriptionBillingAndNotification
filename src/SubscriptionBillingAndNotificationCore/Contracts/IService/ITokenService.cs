@@ -12,7 +12,7 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IService
 {
     public interface ITokenService
     {
-        Task<AuthResponseDto> AuthenticateUser(User user);
-        Task<RefreshTokenResponseDto> RefreshToken(RefreshTokenRequestDto request);
+        Task<AuthResponseDto> AuthenticateUser(User user, CancellationToken cancellationToken);
+        Task<RefreshTokenResponseDto> RefreshToken(RefreshTokenRequestDto request, CancellationToken cancellationToken);
     }
 }

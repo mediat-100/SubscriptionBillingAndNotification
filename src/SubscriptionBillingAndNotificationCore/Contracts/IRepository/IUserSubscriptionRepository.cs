@@ -9,10 +9,12 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IRepository
 {
     public interface IUserSubscriptionRepository
     {
-        Task<UserSubscription> AddUserSubscription(UserSubscription userSubscription);
+        Task<UserSubscription> AddUserSubscription(UserSubscription userSubscription, CancellationToken cancellationToken);
         UserSubscription GetSubscriptionById(long userSubscriptionId);
         IEnumerable<UserSubscription> SearchUserSubscriptions(long? userId = null, long? subscriptionId = null, int? subscriptionStatus = null, int pageNumber = 1, int pageSize = 10);
         IEnumerable<UserSubscription> GetActiveSubscriptions(int pageNumber = 1, int pageSize = 10);
-        Task<UserSubscription> UpdateUserSubscription(UserSubscription userSubscription);
+        Task<UserSubscription> UpdateUserSubscription(UserSubscription userSubscription, CancellationToken cancellationToken);
+        Task<List<UserSubscription>> GetSubscriptionsExpiringIn3days(CancellationToken cancellationToken);
+        Task<List<UserSubscription>> GetExpiredSubscriptions(CancellationToken cancellationToken);
     }
 }

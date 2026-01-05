@@ -21,19 +21,19 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             _userRepository = userRepository;
         }
 
-        public async Task<BaseResponse<string>> DeleteUser(long id)
+        public async Task<BaseResponse<string>> DeleteUser(long id, CancellationToken cancellationToken)
         {
-            var existingUser = await GetUserById(id);
-            var isDeleted = await _userRepository.DeleteUser(id);
+            var existingUser = await GetUserById(id, cancellationToken);
+            var isDeleted = await _userRepository.DeleteUser(id, cancellationToken);
             if (!isDeleted)
                 throw new Exception("An error occurred while trying to delete user");
 
             return BaseResponse<string>.Ok("", "User Deleted Successfully");
         }
 
-        public async Task<BaseResponse<UserResponseDto>> GetUserById(long id)
+        public async Task<BaseResponse<UserResponseDto>> GetUserById(long id, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetUser(id) ??
+            var user = await _userRepository.GetUser(id, cancellationToken) ??
                 throw new NotFoundException("User Id Not Found");
 
             var userResponseDto = ConvertToUserResponseDto(user);
@@ -50,9 +50,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             return BaseResponse<PagedUserResponseDto>.Ok(response);
         }
 
-        public async Task<BaseResponse<UserResponseDto>> UpdateUser(UpdateUserRequestDto request)
+        public async Task<BaseResponse<UserResponseDto>> UpdateUser(UpdateUserRequestDto request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetUser(request.Id) ??
+            var user = await _userRepository.GetUser(request.Id, cancellationToken) ??
                 throw new NotFoundException("User Not Found!");
 
             user.Firstname = request.Firstname;
@@ -60,7 +60,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             user.RefreshToken = request.RefreshToken;
             user.RefreshTokenExpiryTime = request.RefreshTokenExpiryTime;
 
-            var updatedUser = await _userRepository.UpdateUser(user);
+            var updatedUser = await _userRepository.UpdateUser(user, cancellationToken);
             if (updatedUser == null)
                 throw new Exception("User Update Failed, Please Try Again!");
 

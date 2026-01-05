@@ -11,7 +11,8 @@ namespace SubscriptionBillingAndNotificationCore.Entities
         public DateTime EndDate { get; set; }
         public DateTime NextBillingDate { get; set; }
         public bool AutoRenew { get; set; }
-        public bool ReminderSent { get; set; }
+        public bool AdvanceReminderSent { get; set; }
+        public bool ExpiryDayReminderSent { get; set; }
 
 
         // Navigation properties

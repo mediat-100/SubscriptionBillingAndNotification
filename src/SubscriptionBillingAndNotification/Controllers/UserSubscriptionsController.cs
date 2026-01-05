@@ -18,17 +18,17 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpPost]
         [Route("Activate")]
-        public async Task<IActionResult> Activate(ActivateSubscriptionRequestDto request)
+        public async Task<IActionResult> Activate(ActivateSubscriptionRequestDto request, CancellationToken cancellationToken)
         {
-            var response = await _userSubscriptionService.ActivateSubscription(request);
+            var response = await _userSubscriptionService.ActivateSubscription(request, cancellationToken);
             return Ok(response);
         }
 
         [HttpPut]
         [Route("Deactivate")]
-        public async Task<IActionResult> Deactivate(long userId)
+        public async Task<IActionResult> Deactivate(long userId, CancellationToken cancellationToken)
         {
-            var response = await _userSubscriptionService.DeactivateSubscription(userId);
+            var response = await _userSubscriptionService.DeactivateSubscription(userId, cancellationToken);
             return Ok(response);
         }
     }

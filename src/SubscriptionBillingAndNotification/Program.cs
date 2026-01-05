@@ -7,7 +7,7 @@ using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Infrastructure.Context;
 using SubscriptionBillingAndNotificationCore.Infrastructure.Repository;
 using SubscriptionBillingAndNotificationCore.Infrastructure.Service;
-using SubscriptionBillingAndNotificationCore.Infrastructure.Service.External;
+using SubscriptionBillingAndNotificationCore.Infrastructure.Service.Background;
 using SubscriptionBillingAndNotificationCore.Utilities.Settings;
 using System.Text;
 
@@ -54,6 +54,8 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
 builder.Services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
 builder.Services.AddSingleton<IEmailService, EmailService>();
+
+builder.Services.AddHostedService<SubscriptionReminderService>();
 
 var app = builder.Build();
 
