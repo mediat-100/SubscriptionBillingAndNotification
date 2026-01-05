@@ -27,6 +27,10 @@ namespace SubscriptionBillingAndNotification.Middlewares
             {
                 await _next(context);
             }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+
+            }
             catch (Exception ex)
             {
                 // Log the full exception details regardless of environment
@@ -61,7 +65,7 @@ namespace SubscriptionBillingAndNotification.Middlewares
                     response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     errorResponse.Message = ex.Message ?? "Unauthorized access";
                     break;
-
+                    
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     errorResponse.Message = "An internal server error occurred. Please try again later! ";

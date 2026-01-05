@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SubscriptionBillingAndNotificationCore.Contracts.IRepository;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Dtos.Requests;
@@ -25,24 +26,26 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
+        private readonly ILogger<AuthService> _logger;
         private readonly string? secretkey;
         private readonly string? issuer;
         private readonly string? audience;
 
         public AuthService(ITokenService tokenService, IUserRepository userRepository, IUserService userService, IConfiguration configuration
-            , IEmailService emailService)
+            , IEmailService emailService, ILogger<AuthService> logger)
         {
             _tokenService = tokenService;
             _userRepository = userRepository;
             _userService = userService;
             _configuration = configuration;
             _emailService = emailService;
+            _logger = logger;
             secretkey = _configuration.GetSection("Jwt")["secretkey"];
             issuer = _configuration.GetSection("Jwt")["issuer"];
             audience = _configuration.GetSection("Jwt")["audience"];
         }
 
-        public async Task<BaseResponse<AuthResponseDto>> SignUp(SignUpRequestDto request)
+        public async Task<BaseResponse<AuthResponseDto>> SignUp(SignUpRequestDto request, CancellationToken cancellationToken)
         {
             if (!Helpers.IsValidEmail(request.Email))
                 throw new ValidationException("A valid email is required.");
@@ -79,10 +82,10 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 UserType = UserType.User
             };
 
-            var userResp = await _userRepository.AddUser(user);
+            var userResp = await _userRepository.AddUser(user, cancellationToken);
 
             //TODO: 1) SEND CONFIRMATION MAIL TO USER AND ACTIVATE USER AFTER EMAIL CONFIRMATION, 2) AUTHENTICATE VIA OAUTH
-            var authResponse = await _tokenService.AuthenticateUser(user);
+            var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
 
             // send
             _emailService.SendEmail("mediatyusuff@gmail.com", "Registration Successful", "Your sign up was successful");
@@ -91,27 +94,27 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
            
         }
 
-        public async Task<BaseResponse<AuthResponseDto>> Login(AuthRequestDto request)
+        public async Task<BaseResponse<AuthResponseDto>> Login(AuthRequestDto request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
                 throw new ValidationException("Please input your email and password");
 
-            var user = await _userRepository.GetUserByEmail(request.Email) ??
+            var user = await _userRepository.GetUserByEmail(request.Email, cancellationToken) ??
                 throw new UnauthorizedException("Incorrect Email or Password");
             
             var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
             if (!verifyPassword)
                 throw new UnauthorizedException("Incorrect Email or Password!");
 
-            var authResponse = await _tokenService.AuthenticateUser(user);
-
+            var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
+            _logger.LogInformation($"Login for user with {authResponse.UserId} was successful");
             return BaseResponse<AuthResponseDto>.Ok(authResponse, "Login successful");
             
         }
 
-        public async Task<BaseResponse<RefreshTokenResponseDto>> RefreshToken(RefreshTokenRequestDto request)
+        public async Task<BaseResponse<RefreshTokenResponseDto>> RefreshToken(RefreshTokenRequestDto request, CancellationToken cancellationToken)
         {
-            var response = await _tokenService.RefreshToken(request);
+            var response = await _tokenService.RefreshToken(request, cancellationToken);
             return BaseResponse<RefreshTokenResponseDto>.Ok(response);
         }
 

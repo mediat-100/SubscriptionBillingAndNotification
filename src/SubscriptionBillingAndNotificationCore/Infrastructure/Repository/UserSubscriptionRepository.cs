@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using SubscriptionBillingAndNotificationCore.Contracts.IRepository;
 using SubscriptionBillingAndNotificationCore.Entities;
 using SubscriptionBillingAndNotificationCore.Infrastructure.Context;
@@ -17,10 +18,10 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
         {
             _dbContext = dbContext;
         }
-        public async Task<UserSubscription> AddUserSubscription(UserSubscription userSubscription)
+        public async Task<UserSubscription> AddUserSubscription(UserSubscription userSubscription, CancellationToken cancellationToken)
         {
-            await _dbContext.UserSubscriptions.AddAsync(userSubscription);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.UserSubscriptions.AddAsync(userSubscription, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return userSubscription;
         }
@@ -59,12 +60,28 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return activeSubscriptions;
         }
 
-        public async Task<UserSubscription> UpdateUserSubscription(UserSubscription userSubscription)
+        public async Task<UserSubscription> UpdateUserSubscription(UserSubscription userSubscription, CancellationToken cancellationToken)
         {
             _dbContext.UserSubscriptions.Update(userSubscription);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return userSubscription;
+        }
+
+        public async Task<List<UserSubscription>> GetSubscriptionsExpiringIn3days(CancellationToken cancellationToken)
+        {
+            var currentDate = DateTime.UtcNow.Date;
+            var subscriptionsExpiringIn3days = await _dbContext.UserSubscriptions.Where(x => currentDate.AddDays(3) == x.EndDate.Date).ToListAsync(cancellationToken);
+
+            return subscriptionsExpiringIn3days;
+        }
+
+        public async Task<List<UserSubscription>> GetExpiredSubscriptions(CancellationToken cancellationToken)
+        {
+            var currentDate = DateTime.UtcNow;
+            var expiredSubscriptions = await _dbContext.UserSubscriptions.Where(x => (currentDate > x.EndDate || (int)x.SubscriptionStatus == 3) && !x.ExpiryDayReminderSent).Include(x => x.User).Include(x => x.SubscriptionPlan).ToListAsync(cancellationToken);
+
+            return expiredSubscriptions;
         }
     }
 }

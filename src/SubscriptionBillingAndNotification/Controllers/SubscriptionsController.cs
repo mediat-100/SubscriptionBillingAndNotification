@@ -17,33 +17,33 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpGet]
         [Route("Details")]
-        public async Task<ActionResult> GetSubscription(long id)
+        public async Task<ActionResult> GetSubscription(long id, CancellationToken cancellationToken)
         {
-            var response = await _subscriptionService.GetSubscriptionById(id);
+            var response = await _subscriptionService.GetSubscriptionById(id, cancellationToken);
             return Ok(response);
         }
 
         [HttpPost]
         [Route("Create")]
-        public async Task<IActionResult> CreateSubscription(AddSubscriptionRequestDto request)
+        public async Task<IActionResult> CreateSubscription(AddSubscriptionRequestDto request, CancellationToken cancellationToken)
         {
-            var response = await _subscriptionService.AddSubscription(request);
+            var response = await _subscriptionService.AddSubscription(request, cancellationToken);
             return Ok(response);
         }
 
         [HttpPut]
         [Route("Update")]
-        public async Task<IActionResult> UpdateSubscription(UpdateSubscriptionRequestDto request)
+        public async Task<IActionResult> UpdateSubscription(UpdateSubscriptionRequestDto request, CancellationToken cancellationToken)
         {
-            var response = await _subscriptionService.UpdateSubscription(request);
+            var response = await _subscriptionService.UpdateSubscription(request, cancellationToken);
             return Ok(response);
         }
 
         [HttpDelete]
         [Route("Delete")]
-        public async Task<IActionResult> DeleteSubscription(long id)
+        public async Task<IActionResult> DeleteSubscription(long id, CancellationToken cancellationToken)
         {
-            var response = await _subscriptionService.DeleteSubscription(id);
+            var response = await _subscriptionService.DeleteSubscription(id, cancellationToken);
             return Ok(response);
         }
 

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Utilities.Settings;
 
-namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service.External
+namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 {
     public class EmailService : IEmailService
     {
