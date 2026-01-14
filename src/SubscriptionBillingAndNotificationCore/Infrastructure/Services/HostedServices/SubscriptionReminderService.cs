@@ -11,7 +11,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service.Backgrou
         private readonly ILogger<SubscriptionReminderService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly PeriodicTimer _timer = new PeriodicTimer(TimeSpan.FromHours(8));
+        private readonly PeriodicTimer _timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
         public SubscriptionReminderService(ILogger<SubscriptionReminderService> logger, 
             IConfiguration configuration, IServiceScopeFactory serviceScopeFactory)
         {
