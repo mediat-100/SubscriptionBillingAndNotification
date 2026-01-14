@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace SubscriptionBillingAndNotificationCore.Enums
 {
-    public enum UserStatus
+    public enum TransactionStatus
     {
-        Inactive = 0,
-        Active = 1,
-        Suspended
+        Pending,
+        Completed,
+        Failed,
+        Cancelled
     }
 }

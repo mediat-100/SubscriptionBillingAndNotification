@@ -3,15 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SubscriptionBillingAndNotificationCore.Enums;
 
 namespace SubscriptionBillingAndNotificationCore.Dtos.Requests
 {
-    public class ActivateSubscriptionRequestDto
+    public class SubscriptionPaymentRequestDto
     {
         public long UserId { get; set; }
-        public long SubsciptionPlanId { get; set; }
+        public long SubscriptionId { get; set; }
         public bool AutoRenew { get; set; }
-        public TransactionStatus TransactionStatus { get; set; }
     }
 }

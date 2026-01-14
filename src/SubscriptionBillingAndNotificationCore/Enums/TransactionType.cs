@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace SubscriptionBillingAndNotificationCore.Enums
 {
-    public enum UserStatus
+    public enum TransactionType
     {
-        Inactive = 0,
-        Active = 1,
-        Suspended
+        Credit = 1,
+        Debit = 2,
     }
 }

@@ -27,12 +27,13 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly ILogger<AuthService> _logger;
+        private readonly IWalletService _walletService;
         private readonly string? secretkey;
         private readonly string? issuer;
         private readonly string? audience;
 
         public AuthService(ITokenService tokenService, IUserRepository userRepository, IUserService userService, IConfiguration configuration
-            , IEmailService emailService, ILogger<AuthService> logger)
+            , IEmailService emailService, ILogger<AuthService> logger, IWalletService walletService)
         {
             _tokenService = tokenService;
             _userRepository = userRepository;
@@ -40,6 +41,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             _configuration = configuration;
             _emailService = emailService;
             _logger = logger;
+            _walletService = walletService;
             secretkey = _configuration.GetSection("Jwt")["secretkey"];
             issuer = _configuration.GetSection("Jwt")["issuer"];
             audience = _configuration.GetSection("Jwt")["audience"];
@@ -86,6 +88,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
             //TODO: 1) SEND CONFIRMATION MAIL TO USER AND ACTIVATE USER AFTER EMAIL CONFIRMATION, 2) AUTHENTICATE VIA OAUTH
             var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
+
+            // create wallet for user
+            var wallet = await _walletService.CreateWallet(userResp.Id, cancellationToken);
 
             // send
             _emailService.SendEmail("mediatyusuff@gmail.com", "Registration Successful", "Your sign up was successful");

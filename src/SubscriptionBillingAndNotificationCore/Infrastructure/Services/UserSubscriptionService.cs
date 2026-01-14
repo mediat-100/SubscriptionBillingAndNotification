@@ -39,6 +39,10 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (userSubscription != null && userSubscription.SubscriptionStatus == SubscriptionStatus.Active)
                 throw new ValidationException("Your already have an active subscription!");
 
+            // check if charge wasn't successful
+            if (request.TransactionStatus != TransactionStatus.Completed)
+                throw new Exception("Subscription Activation or Renewal Failed!");
+
             DateTime setStartDate = DateTime.UtcNow;
             DateTime setSubscriptionExpiry;
 
@@ -56,51 +60,40 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 default:
                     setSubscriptionExpiry = setStartDate;
                     break;
-            }          
-            
-            if (userSubscription != null) 
-            {
-                userSubscription.SubscriptionPlanId = request.SubsciptionPlanId;
-                userSubscription.StartDate = setStartDate;
-                userSubscription.EndDate = setSubscriptionExpiry;
-                userSubscription.SubscriptionStatus = SubscriptionStatus.Active;
-                userSubscription.AutoRenew = request.AutoRenew;
-
-                await _userSubscriptionRepository.UpdateUserSubscription(userSubscription, cancellationToken);
-                
-            }
-            else
-            {
-                userSubscription = new UserSubscription
-                {
-                    UserId = user.Data.Id,
-                    SubscriptionPlanId = subscription.Data.Id,
-                    StartDate = setStartDate,
-                    EndDate = setSubscriptionExpiry,
-                    NextBillingDate = setSubscriptionExpiry,
-                    SubscriptionStatus = SubscriptionStatus.Active,
-                    AutoRenew = request.AutoRenew
-                };
-
-                await _userSubscriptionRepository.AddUserSubscription(userSubscription, cancellationToken);
             }
 
-            // email user that subscription was successful
+            userSubscription = new UserSubscription
+            {
+                UserId = user.Data.Id,
+                SubscriptionPlanId = subscription.Data.Id,
+                StartDate = setStartDate,
+                EndDate = setSubscriptionExpiry,
+                NextBillingDate = setSubscriptionExpiry,
+                SubscriptionStatus = SubscriptionStatus.Active,
+                AutoRenew = request.AutoRenew
+            };
+
+            await _userSubscriptionRepository.AddUserSubscription(userSubscription, cancellationToken);
+
             _emailService.SendEmail(userSubscription.User.Email, "Subscription Activated!", "Your subscription is now active");
+
             return BaseResponse<string>.Ok("", "Subscription Activated Successfully");
+           
         }
 
         public async Task<BaseResponse<string>> DeactivateSubscription(long userId, CancellationToken cancellationToken)
         {
             var user = await _userService.GetUserById(userId, cancellationToken);
-            var userSubscription = _userSubscriptionRepository.SearchUserSubscriptions(userId, subscriptionStatus:  (int)SubscriptionStatus.Active).FirstOrDefault();
+            var userSubscription = _userSubscriptionRepository.SearchUserSubscriptions(userId, subscriptionStatus:  (int)SubscriptionStatus.Active).OrderByDescending(x => x.StartDate).FirstOrDefault();
             if (userSubscription == null)
                 throw new ValidationException("User does not have an active subscription!");
 
             userSubscription.SubscriptionStatus = SubscriptionStatus.Inactive;
+            userSubscription.AutoRenew = false;
             await _userSubscriptionRepository.UpdateUserSubscription(userSubscription, cancellationToken);
 
             _emailService.SendEmail(userSubscription.User.Email, "Subscription Deactivated!", "Your subscription has now been deactived");
+
             return BaseResponse<string>.Ok("", "Subscription Deactivated Successfully");
         }
 
