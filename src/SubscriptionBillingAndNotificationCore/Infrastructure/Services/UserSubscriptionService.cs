@@ -41,7 +41,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
             // check if charge wasn't successful
             if (request.TransactionStatus != TransactionStatus.Completed)
-                throw new Exception("Subscription Activation or Renewal Failed!");
+                throw new Exception("Subscription Activation or Renewal Payment Failed!");
 
             DateTime setStartDate = DateTime.UtcNow;
             DateTime setSubscriptionExpiry;
