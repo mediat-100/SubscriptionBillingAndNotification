@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Dtos.Requests;
+using SubscriptionBillingAndNotificationCore.Infrastructure.Services;
 
 namespace SubscriptionBillingAndNotification.Controllers
 {
@@ -31,5 +32,6 @@ namespace SubscriptionBillingAndNotification.Controllers
             var response = await _userSubscriptionService.DeactivateSubscription(userId, cancellationToken);
             return Ok(response);
         }
+
     }
 }

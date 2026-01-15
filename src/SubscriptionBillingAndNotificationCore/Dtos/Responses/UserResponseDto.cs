@@ -17,5 +17,6 @@ namespace SubscriptionBillingAndNotificationCore.Dtos.Responses
         public UserType UserType { get; set; }
         public string RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
+        public long WalletId { get; set; }
     }
 }

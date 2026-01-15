@@ -17,7 +17,6 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 {
     public class TokenService : ITokenService
     {
-        //private readonly ITokenGenerator _tokenGenerator;
         private readonly string? _secretKey;
         private readonly string? _issuer;
         private readonly string? _audience;
@@ -27,7 +26,6 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
         public TokenService(IConfiguration configuration, IUserRepository userRepository, IUserService userService)
         {
-            // _tokenGenerator = tokenGenerator;
             _userRepository = userRepository;
             _userService = userService;
             _configuration = configuration;

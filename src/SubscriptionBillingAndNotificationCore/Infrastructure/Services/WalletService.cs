@@ -14,16 +14,12 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
         private readonly ApplicationDbContext _dbContext;
         private readonly IWalletRepository _walletRepository;
         private readonly IUserService _userService;
-        private readonly ISubscriptionService _subscriptionService;
-        private readonly IUserSubscriptionService _userSubscriptionService;
 
-        public WalletService(ApplicationDbContext dbContext,IWalletRepository walletRepository, IUserService userService, ISubscriptionService subscriptionService, IUserSubscriptionService userSubscriptionService)
+        public WalletService(ApplicationDbContext dbContext,IWalletRepository walletRepository, IUserService userService)
         {
             _dbContext = dbContext;
             _walletRepository = walletRepository;
             _userService = userService;
-            _subscriptionService = subscriptionService;
-            _userSubscriptionService = userSubscriptionService;
         }
 
         public async Task<BaseResponse<WalletResponseDto>> GetWalletByUserId(long userId, CancellationToken ct)
@@ -105,37 +101,30 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
             
         }
 
-        public async Task<BaseResponse<string>> ProcessSubscriptionPayment(SubscriptionPaymentRequestDto request, CancellationToken ct)
+        public async Task<BaseResponse<TransactionResponseDto>> DeductFunds(DeductFundsRequestDto request, CancellationToken ct)
         {
-            // check if user exist 
-            var user = await _userService.GetUserById(request.UserId, ct);
-            // check if subscription exist 
-            var subscription = await _subscriptionService.GetSubscriptionById(request.SubscriptionId, ct);
-            decimal subscriptionPrice = subscription.Data.Pricing;
-            // deduct subscription from user wallet before this check if user have enough funds
+            var wallet = await _walletRepository.GetWalletById(request.WalletId, ct) ??
+                    throw new ValidationException("WalletId not found!");
+
+            // check if wallet has enough funds for subscription
+            if (wallet.Balance < request.Amount)
+                throw new ValidationException("Insufficient funds!!");
+
             var walletTransaction = new WalletTransaction();
             using var transaction = _dbContext.Database.BeginTransaction();
             try
             {
-                // charge customer wallet
-                var wallet = await _walletRepository.GetWalletByUserId(user.Data.Id, ct) ??
-                    throw new ValidationException("WalletId not found!");
-
-                // check if wallet has enough funds for subscription
-                if (wallet.Balance < subscriptionPrice)
-                    throw new ValidationException("Insufficient funds!!");
-
-                wallet.Balance -= subscriptionPrice;
+                wallet.Balance -= request.Amount;
                 wallet.UpdatedAt = DateTime.UtcNow;
 
                 walletTransaction = new WalletTransaction
                 {
                     WalletId = wallet.Id,
-                    Amount = subscriptionPrice,
+                    Amount = request.Amount,
                     BalanceAfter = wallet.Balance,
                     Status = Enums.TransactionStatus.Completed,
-                    Description = "SubscriptionRenewal",
-                    ReferenceId = "SUB" + DateTime.UtcNow.Ticks.ToString(),
+                    Description = request.Description,
+                    ReferenceId = "TRX" + DateTime.UtcNow.Ticks.ToString(),
                     Type = Enums.TransactionType.Debit,
                 };
 
@@ -149,18 +138,8 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
                 throw;
             }
 
-            // activate sub if charge was successful, call usersubscription service to give value
-            var activateSubscriptionRequestPayload = new ActivateSubscriptionRequestDto
-            {
-                SubsciptionPlanId = subscription.Data.Id,
-                TransactionStatus = walletTransaction.Status,
-                UserId = user.Data.Id,
-                AutoRenew = request.AutoRenew,
-            };
-            await _userSubscriptionService.ActivateSubscription(activateSubscriptionRequestPayload, ct);
-
-            return BaseResponse<string>.Ok("", "Subscription Activation In Progress...");
-
+            var transactionResponse = MapToTransactionResponse(walletTransaction);
+            return BaseResponse<TransactionResponseDto>.Ok(transactionResponse, "Funds Deducted Successfully!");
         }
 
         public async Task<BaseResponse<TransactionResponseDto>> GetTransaction(long transactionId, CancellationToken ct)
@@ -173,7 +152,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
             return BaseResponse<TransactionResponseDto>.Ok(response, "Transaction Fetched Successfully");
         }
 
-        public async Task<BaseResponse<PagedResponse<TransactionResponseDto>>> GetTransactionHistory(long walletId, int page = 1, int pageSize = 20, CancellationToken ct = default)
+        public async Task<BaseResponse<PagedResponse<TransactionResponseDto>>> GetTransactionHistory(long walletId, int page = 1, int pageSize = 10, CancellationToken ct = default)
         {
             var transactions = await _walletRepository.GetTransactions(walletId, page, pageSize, ct);
             

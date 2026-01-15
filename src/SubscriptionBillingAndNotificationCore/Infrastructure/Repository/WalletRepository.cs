@@ -27,9 +27,11 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return wallet;
         }
 
-        public async Task<IEnumerable<WalletTransaction>> GetTransactions(long walletId, int pageSize = 10, int page = 1, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WalletTransaction>> GetTransactions(long walletId, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
         {
-            var transactions = await _dbContext.WalletTransactions.Where(x => x.WalletId == walletId && !x.IsDeleted).Skip((pageSize - 1) * page).Take(pageSize).OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
+            var transactions = await _dbContext.WalletTransactions.Where(x => x.WalletId == walletId && !x.IsDeleted)
+                .Skip((page - 1) * pageSize).Take(pageSize).OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
+
             return transactions.AsEnumerable();
         }
 

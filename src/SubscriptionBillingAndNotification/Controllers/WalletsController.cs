@@ -15,8 +15,16 @@ namespace SubscriptionBillingAndNotification.Controllers
             _walletService = walletService;
         }
 
+        [HttpPost]
+        [Route("Create")]
+        public async Task<IActionResult> CreateWallet(long userId, CancellationToken ct)
+        {
+            var wallet = await _walletService.CreateWallet(userId, ct);
+            return Ok(wallet);
+        }
+
         [HttpGet]
-        [Route("GetWalletByUserId")]
+        //[Route("GetWalletByUserId")]
         public async Task<IActionResult> GetWalletByUserId(long userId, CancellationToken ct)
         {
             var response = await _walletService.GetWalletByUserId(userId, ct);
@@ -24,7 +32,7 @@ namespace SubscriptionBillingAndNotification.Controllers
         }
 
         [HttpGet]
-        [Route("GetWallet")]
+        [Route("Details")]
         public async Task<IActionResult> GetWallet(long walletId, CancellationToken ct)
         {
             var response = await _walletService.GetWallet(walletId, ct);
@@ -39,16 +47,8 @@ namespace SubscriptionBillingAndNotification.Controllers
             return Ok(response);
         }
 
-        [HttpPost]
-        [Route("ProcessSubscriptionPayment")]
-        public async Task<IActionResult> ProcessSubscriptionPayment(SubscriptionPaymentRequestDto request, CancellationToken ct)
-        {
-            var response = await _walletService.ProcessSubscriptionPayment(request, ct);
-            return Ok(response);
-        }
-
         [HttpGet]
-        [Route("GetTransaction")]
+        [Route("Transaction")]
         public async Task<IActionResult> GetTransaction(long transactionId, CancellationToken ct)
         {
             var response = await _walletService.GetTransaction(transactionId, ct);
@@ -56,7 +56,7 @@ namespace SubscriptionBillingAndNotification.Controllers
         }
 
         [HttpGet]
-        [Route("GetTransactionHistory")]
+        [Route("TransactionHistory")]
         public async Task<IActionResult> GetTransactionHistory(long walletId, int page = 1, int pageSize = 10)
         {
             var response = await _walletService.GetTransactionHistory(walletId, page, pageSize);

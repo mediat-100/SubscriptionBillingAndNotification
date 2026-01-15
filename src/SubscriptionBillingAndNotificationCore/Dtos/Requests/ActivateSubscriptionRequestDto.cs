@@ -12,6 +12,5 @@ namespace SubscriptionBillingAndNotificationCore.Dtos.Requests
         public long UserId { get; set; }
         public long SubsciptionPlanId { get; set; }
         public bool AutoRenew { get; set; }
-        public TransactionStatus TransactionStatus { get; set; }
     }
 }

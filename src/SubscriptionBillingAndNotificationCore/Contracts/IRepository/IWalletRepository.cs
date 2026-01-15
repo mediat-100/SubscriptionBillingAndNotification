@@ -13,7 +13,7 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IRepository
         Task<Wallet?> GetWalletByUserId(long userId, CancellationToken cancellationToken);
         Task<Wallet> CreateWallet(Wallet wallet, CancellationToken cancellationToken);
         Task<Wallet> UpdateWallet(Wallet wallet, CancellationToken cancellationToken);
-        Task<IEnumerable<WalletTransaction>> GetTransactions(long walletId, int pageSize = 10, int page = 1, CancellationToken cancellationToken = default);
+        Task<IEnumerable<WalletTransaction>> GetTransactions(long walletId, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default);
         Task<WalletTransaction> AddTransaction(WalletTransaction transaction, CancellationToken cancellationToken);
         Task<WalletTransaction?> GetTransaction(long transactionId, CancellationToken cancellationToken);
     }

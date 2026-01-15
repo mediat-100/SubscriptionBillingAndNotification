@@ -92,6 +92,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 UserType = user.UserType,
                 RefreshToken = user.RefreshToken,
                 RefreshTokenExpiryTime = user.RefreshTokenExpiryTime,
+                WalletId = user.Wallet != null ? user.Wallet.Id : 0
             };
 
             return userResponseDto;
