@@ -61,7 +61,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
         {
             IQueryable<Subscription> query = _dbContext.Subscriptions;
 
-            if (string.IsNullOrWhiteSpace(type))
+            if (!string.IsNullOrWhiteSpace(type))
                 query = query.Where(x => x.Type == type);
 
             if (isDeleted.HasValue && isDeleted == 1)

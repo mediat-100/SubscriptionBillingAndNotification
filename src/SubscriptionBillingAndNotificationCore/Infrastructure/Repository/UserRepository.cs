@@ -24,7 +24,8 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
 
         public async Task<User?> GetUser(long userId, CancellationToken cancellationToken)
         {
-            return await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Status == Enums.UserStatus.Active && !x.IsDeleted, cancellationToken);
+            return await _dbContext.Users.Include(x => x.Wallet).FirstOrDefaultAsync(x => x.Id == userId && x.Status == Enums.UserStatus.Active && !x.IsDeleted, cancellationToken)
+                ;
         }
 
         public async Task<User?> GetUserByEmail(string email, CancellationToken cancellationToken)

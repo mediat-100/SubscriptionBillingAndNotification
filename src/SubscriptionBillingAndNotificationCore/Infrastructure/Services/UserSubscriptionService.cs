@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SubscriptionBillingAndNotificationCore.Contracts.IRepository;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Dtos.Requests;
@@ -17,31 +19,41 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         private readonly IUserService _userService;
         private readonly ISubscriptionService _subscriptionService;
         private readonly IEmailService _emailService;
+        private readonly IWalletService _walletService;
         private readonly ILogger<UserSubscriptionService> _logger;
 
         public UserSubscriptionService(IUserSubscriptionRepository userSubscriptionRepository,IUserService userService, ISubscriptionService subscriptionService, 
-            IEmailService emailService, ILogger<UserSubscriptionService> logger)
+            IEmailService emailService, IWalletService walletService, ILogger<UserSubscriptionService> logger)
         {
             _userSubscriptionRepository = userSubscriptionRepository;
             _userService = userService;
             _subscriptionService = subscriptionService;
             _emailService = emailService;
+            _walletService = walletService;
             _logger = logger;
         }
 
-        public async Task<BaseResponse<string>> ActivateSubscription(ActivateSubscriptionRequestDto request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<string>> ActivateSubscription(ActivateSubscriptionRequestDto request, CancellationToken ct)
         {
-            var user = await _userService.GetUserById(request.UserId, cancellationToken);
-            var subscription = await _subscriptionService.GetSubscriptionById(request.SubsciptionPlanId, cancellationToken);
+            var user = await _userService.GetUserById(request.UserId, ct);
+            var subscription = await _subscriptionService.GetSubscriptionById(request.SubsciptionPlanId, ct);
 
             // check if user as an active subscription
             var userSubscription = _userSubscriptionRepository.SearchUserSubscriptions(userId : request.UserId).FirstOrDefault();
-            if (userSubscription != null && userSubscription.SubscriptionStatus == SubscriptionStatus.Active)
+            if (userSubscription != null && userSubscription.EndDate >= DateTime.UtcNow)
                 throw new ValidationException("Your already have an active subscription!");
 
-            // check if charge wasn't successful
-            if (request.TransactionStatus != TransactionStatus.Completed)
-                throw new Exception("Subscription Activation or Renewal Payment Failed!");
+            // deduct subscription from user wallet
+            var deductFunds = new DeductFundsRequestDto
+            {
+                WalletId = user.Data.WalletId,
+                Amount = subscription.Data.Pricing,
+                Description = "SubscriptionPayment",
+            };
+            var transaction = await _walletService.DeductFunds(deductFunds, ct);
+            // check if charge was successful
+            if (transaction.Data.Status != TransactionStatus.Completed.ToString())
+                throw new Exception("Subscription Payment Failed!");
 
             DateTime setStartDate = DateTime.UtcNow;
             DateTime setSubscriptionExpiry;
@@ -73,7 +85,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 AutoRenew = request.AutoRenew
             };
 
-            await _userSubscriptionRepository.AddUserSubscription(userSubscription, cancellationToken);
+            await _userSubscriptionRepository.AddUserSubscription(userSubscription, ct);
 
             _emailService.SendEmail(userSubscription.User.Email, "Subscription Activated!", "Your subscription is now active");
 

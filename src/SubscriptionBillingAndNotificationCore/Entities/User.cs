@@ -17,5 +17,6 @@ namespace SubscriptionBillingAndNotificationCore.Entities
         public UserType UserType { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
+        public Wallet? Wallet { get; set; }
     }
 }
