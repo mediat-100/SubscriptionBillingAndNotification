@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Utilities.Settings;
+using static SubscriptionBillingAndNotificationCore.Utilities.CustomExceptions;
 
 namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 {
@@ -26,10 +27,17 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             };
             
         }
-        public void SendEmail(string recipient, string subject, string body)
+        public async Task SendEmail(string recipient, string subject, string body)
         {
-            string from = _emailSettings.Value.From;
-            _smtpClient.Send(from, recipient, subject, body);
+            try
+            {
+                string from = _emailSettings.Value.From;
+                _smtpClient.Send(from, recipient, subject, body);
+            }
+            catch (Exception ex)
+            {
+                throw new SendEmailException("An error occured while trying to send email");
+            }
         }
     }
 }

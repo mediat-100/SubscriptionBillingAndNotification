@@ -32,7 +32,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
             return BaseResponse<WalletResponseDto>.Ok(response, "Wallet Fetched Successfully");
         }
 
-        public async Task<BaseResponse<WalletResponseDto>> GetWallet(long walletId, CancellationToken ct)
+        /*public async Task<BaseResponse<WalletResponseDto>> GetWallet(long walletId, CancellationToken ct)
         {
             Wallet wallet = await _walletRepository.GetWalletById(walletId, ct)
                 ?? throw new NotFoundException("WalletId not found!");
@@ -40,7 +40,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
             var response = MapWalletEntityToWalletResponseDto(wallet);
 
             return BaseResponse<WalletResponseDto>.Ok(response, "Wallet Fetched Successfully");
-        }
+        }*/
 
 
         public async Task<BaseResponse<WalletResponseDto>> CreateWallet(long userId, CancellationToken ct)
@@ -60,28 +60,33 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
 
             return BaseResponse<WalletResponseDto>.Ok(response, "Wallet Created Successfully");
         }
-        public async Task<BaseResponse<TransactionResponseDto>> AddFunds(AddFundsRequestDto request, CancellationToken ct)
+        public async Task<BaseResponse<TransactionResponseDto>> AddFunds(AddFundsRequestDto request, long userId, CancellationToken ct)
         {
             if (request.Amount <= 0)
                 throw new ValidationException("Amount must be greater than 0");
 
+            // get wallet based on user
+            if (userId <= 0)
+                throw new ValidationException("Invalid userId");
+
+            var wallet = await _walletRepository.GetWalletByUserId(userId, ct) ??
+                throw new NotFoundException("WalletId not found!");
+
             using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
             try
             {
-                var wallet = await _walletRepository.GetWalletById(request.WalletId, ct) ??
-                        throw new NotFoundException("WalletId not found!");
                 wallet.Balance += request.Amount;
                 wallet.UpdatedAt = DateTime.UtcNow;
 
                 var walletTransaction = new WalletTransaction
                 {
-                    WalletId = request.WalletId,
+                    WalletId = wallet.Id,
                     Amount = request.Amount,
                     Type = Enums.TransactionType.Credit,
                     Status = Enums.TransactionStatus.Completed,
                     BalanceAfter = wallet.Balance,
                     ReferenceId = "CREDIT" + DateTime.UtcNow.Millisecond.ToString(),
-                    Description = "TOPUP"
+                    Description = request.Description ?? "TOPUP"
                 };
 
                 _dbContext.Wallets.Update(wallet);
@@ -101,9 +106,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
             
         }
 
-        public async Task<BaseResponse<TransactionResponseDto>> DeductFunds(DeductFundsRequestDto request, CancellationToken ct)
+        public async Task<BaseResponse<TransactionResponseDto>> DeductFunds(DeductFundsRequestDto request, long UserId, CancellationToken ct)
         {
-            var wallet = await _walletRepository.GetWalletById(request.WalletId, ct) ??
+            var wallet = await _walletRepository.GetWalletByUserId(UserId, ct) ??
                     throw new ValidationException("WalletId not found!");
 
             // check if wallet has enough funds for subscription
@@ -152,9 +157,11 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Services
             return BaseResponse<TransactionResponseDto>.Ok(response, "Transaction Fetched Successfully");
         }
 
-        public async Task<BaseResponse<PagedResponse<TransactionResponseDto>>> GetTransactionHistory(long walletId, int page = 1, int pageSize = 10, CancellationToken ct = default)
+        public async Task<BaseResponse<PagedResponse<TransactionResponseDto>>> GetTransactionHistory(long userId, int page = 1, int pageSize = 10, CancellationToken ct = default)
         {
-            var transactions = await _walletRepository.GetTransactions(walletId, page, pageSize, ct);
+            var wallet = await _walletRepository.GetWalletByUserId(userId, ct) ??
+                throw new NotFoundException("Wallet Not Found");
+            var transactions = await _walletRepository.GetTransactions(wallet.Id, page, pageSize, ct);
             
             var transactionsResponseDto = transactions.Select(x => MapToTransactionResponse(x)).ToList() ?? new List<TransactionResponseDto>();
             var pagedresponse = PagedResponse<TransactionResponseDto>.Create(transactionsResponseDto.AsEnumerable(), page, pageSize);

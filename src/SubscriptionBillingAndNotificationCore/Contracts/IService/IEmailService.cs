@@ -8,6 +8,6 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IService
 {
     public interface IEmailService
     {
-        void SendEmail(string recipient, string subject, string body);
+        Task SendEmail(string recipient, string subject, string body);
     }
 }

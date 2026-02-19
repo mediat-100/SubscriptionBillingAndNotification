@@ -1,4 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using Azure.Core;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SubscriptionBillingAndNotificationCore.Contracts.IRepository;
@@ -8,12 +15,6 @@ using SubscriptionBillingAndNotificationCore.Dtos.Responses;
 using SubscriptionBillingAndNotificationCore.Entities;
 using SubscriptionBillingAndNotificationCore.Enums;
 using SubscriptionBillingAndNotificationCore.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 //using System.Web.Http.ModelBinding;
 using static SubscriptionBillingAndNotificationCore.Utilities.CustomExceptions;
 
@@ -32,6 +33,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         private readonly string? issuer;
         private readonly string? audience;
 
+
         public AuthService(ITokenService tokenService, IUserRepository userRepository, IUserService userService, IConfiguration configuration
             , IEmailService emailService, ILogger<AuthService> logger, IWalletService walletService)
         {
@@ -48,6 +50,113 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
         }
 
         public async Task<BaseResponse<AuthResponseDto>> SignUp(SignUpRequestDto request, CancellationToken cancellationToken)
+        {
+            ValidateSignupRequest(request);
+            var existingUser = _userService.SearchUsers(email: request.Email);
+            if (existingUser.Data.Users.Count() > 0)
+                throw new ValidationException("User already exist!");
+
+            var user = new User
+            {
+                Firstname = request.Firstname,
+                Lastname = request.Lastname,
+                Email = request.Email,
+                Password = Helpers.HashPassword(request.Password),
+                Status = UserStatus.Active,
+                UserType = UserType.User
+            };
+
+            var userResp = await _userRepository.AddUser(user, cancellationToken);
+            // create wallet for user
+            var wallet = await _walletService.CreateWallet(userResp.Id, cancellationToken);
+
+            var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
+
+            // sendemail
+            await _emailService.SendEmail(user.Email, "Registration Successful", "Your sign up was successful!.");
+
+            return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
+
+        }
+
+        public async Task<BaseResponse<AuthResponseDto>> Login(AuthRequestDto request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+                throw new ValidationException("Please input your email and password");
+
+            var user = await _userRepository.GetUserByEmail(request.Email, cancellationToken) ??
+                throw new UnauthorizedException("Incorrect Email or Password");
+
+            var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
+            if (!verifyPassword)
+                throw new UnauthorizedException("Incorrect Email or Password!");
+
+            var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
+            _logger.LogInformation($"Login for user with {authResponse.UserId} was successful");
+            return BaseResponse<AuthResponseDto>.Ok(authResponse, "Login successful");
+
+        }
+
+        public async Task<BaseResponse<RefreshTokenResponseDto>> RefreshToken(RefreshTokenRequestDto request, CancellationToken cancellationToken)
+        {
+            var response = await _tokenService.RefreshToken(request, cancellationToken);
+            return BaseResponse<RefreshTokenResponseDto>.Ok(response);
+        }
+
+        #region ADMIN AUTH
+        public async Task<BaseResponse<AuthResponseDto>> AdminSignup(SignUpRequestDto request, CancellationToken cancellationToken)
+        {
+            ValidateSignupRequest(request);
+            var existingUser = _userService.SearchUsers(email: request.Email);
+            if (existingUser.Data.Users.Count() > 0)
+                throw new ValidationException("Admin already exist!");
+
+            var user = new User
+            {
+                Firstname = request.Firstname,
+                Lastname = request.Lastname,
+                Email = request.Email,
+                Password = Helpers.HashPassword(request.Password),
+                Status = UserStatus.Active,
+                UserType = UserType.Admin
+            };
+
+            var userResp = await _userRepository.AddUser(user, cancellationToken);
+            // create wallet for user
+            var wallet = await _walletService.CreateWallet(userResp.Id, cancellationToken);
+
+            var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
+
+            // sendemail
+            await _emailService.SendEmail(user.Email, "Registration Successful", "Your sign up was successful!.");
+
+            return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
+        }
+
+        public async Task<BaseResponse<AuthResponseDto>> AdminLogin(AuthRequestDto request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+                throw new ValidationException("Please input your email and password");
+
+            var user = await _userRepository.GetUserByEmail(request.Email, cancellationToken) ??
+                throw new UnauthorizedException("Incorrect Email or Password");
+
+            var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
+            if (!verifyPassword)
+                throw new UnauthorizedException("Incorrect Email or Password!");
+
+            if (user.UserType != UserType.Admin)
+                throw new ForbiddenException("Invalid Access!...Contact Admin To Resolve");
+
+            var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
+            _logger.LogInformation($"Login for admin with {authResponse.UserId} was successful");
+            return BaseResponse<AuthResponseDto>.Ok(authResponse, "Login successful");
+
+        }
+        #endregion
+
+
+        private void ValidateSignupRequest(SignUpRequestDto request)
         {
             if (!Helpers.IsValidEmail(request.Email))
                 throw new ValidationException("A valid email is required.");
@@ -70,59 +179,6 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (request.Password.Contains(" "))
                 throw new ValidationException("Password cannot contain spaces.");
 
-            var existingUser = _userService.SearchUsers(email: request.Email);
-            if (existingUser.Data.Users.Count() > 0)
-                throw new ValidationException("User already exist!");
-
-            var user = new User
-            {
-                Firstname = request.Firstname,
-                Lastname = request.Lastname,
-                Email = request.Email,
-                Password = Helpers.HashPassword(request.Password),
-                Status = UserStatus.Active,
-                UserType = UserType.User
-            };
-
-            var userResp = await _userRepository.AddUser(user, cancellationToken);
-
-            //TODO: 1) SEND CONFIRMATION MAIL TO USER AND ACTIVATE USER AFTER EMAIL CONFIRMATION, 2) AUTHENTICATE VIA OAUTH
-            var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
-
-            // create wallet for user
-            var wallet = await _walletService.CreateWallet(userResp.Id, cancellationToken);
-
-            // send
-            _emailService.SendEmail("mediatyusuff@gmail.com", "Registration Successful", "Your sign up was successful");
-
-            return BaseResponse<AuthResponseDto>.Ok(authResponse, "Signup successful");
-           
         }
-
-        public async Task<BaseResponse<AuthResponseDto>> Login(AuthRequestDto request, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
-                throw new ValidationException("Please input your email and password");
-
-            var user = await _userRepository.GetUserByEmail(request.Email, cancellationToken) ??
-                throw new UnauthorizedException("Incorrect Email or Password");
-            
-            var verifyPassword = Helpers.VerifyPassword(request.Password, user.Password);
-            if (!verifyPassword)
-                throw new UnauthorizedException("Incorrect Email or Password!");
-
-            var authResponse = await _tokenService.AuthenticateUser(user, cancellationToken);
-            _logger.LogInformation($"Login for user with {authResponse.UserId} was successful");
-            return BaseResponse<AuthResponseDto>.Ok(authResponse, "Login successful");
-            
-        }
-
-        public async Task<BaseResponse<RefreshTokenResponseDto>> RefreshToken(RefreshTokenRequestDto request, CancellationToken cancellationToken)
-        {
-            var response = await _tokenService.RefreshToken(request, cancellationToken);
-            return BaseResponse<RefreshTokenResponseDto>.Ok(response);
-        }
-
-        
     }
 }

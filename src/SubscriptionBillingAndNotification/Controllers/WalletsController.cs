@@ -1,14 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Dtos.Requests;
+using static SubscriptionBillingAndNotificationCore.Utilities.CustomExceptions;
 
 namespace SubscriptionBillingAndNotification.Controllers
 {
     [ApiController]
     [Route("[Controller]")]
-    public class WalletsController : Controller
+    [Authorize]
+    public class WalletsController : BaseController
     {
         private readonly IWalletService _walletService;
+        private long UserId => long.Parse(GetCurrentUserId())!;
 
         public WalletsController(IWalletService walletService)
         {
@@ -17,6 +21,7 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpPost]
         [Route("Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateWallet(long userId, CancellationToken ct)
         {
             var wallet = await _walletService.CreateWallet(userId, ct);
@@ -24,26 +29,18 @@ namespace SubscriptionBillingAndNotification.Controllers
         }
 
         [HttpGet]
-        //[Route("GetWalletByUserId")]
-        public async Task<IActionResult> GetWalletByUserId(long userId, CancellationToken ct)
-        {
-            var response = await _walletService.GetWalletByUserId(userId, ct);
-            return Ok(response);
-        }
-
-        [HttpGet]
         [Route("Details")]
-        public async Task<IActionResult> GetWallet(long walletId, CancellationToken ct)
+        public async Task<IActionResult> GetWallet(CancellationToken ct)
         {
-            var response = await _walletService.GetWallet(walletId, ct);
+            var response = await _walletService.GetWalletByUserId(UserId, ct);
             return Ok(response);
         }
 
         [HttpPost]
-        [Route("AddFunds")]
-        public async Task<IActionResult> AddFunds(AddFundsRequestDto request, CancellationToken ct)
+        [Route("Deposit")]
+        public async Task<IActionResult> Deposit(AddFundsRequestDto request, CancellationToken ct)
         {
-            var response = await _walletService.AddFunds(request, ct);
+            var response = await _walletService.AddFunds(request, UserId, ct);
             return Ok(response);
         }
 
@@ -57,9 +54,9 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpGet]
         [Route("TransactionHistory")]
-        public async Task<IActionResult> GetTransactionHistory(long walletId, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetTransactionHistory(int page = 1, int pageSize = 10)
         {
-            var response = await _walletService.GetTransactionHistory(walletId, page, pageSize);
+            var response = await _walletService.GetTransactionHistory(UserId, page, pageSize);
             return Ok(response);
         }
     }

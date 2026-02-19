@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SubscriptionBillingAndNotificationCore.Contracts.IService;
 using SubscriptionBillingAndNotificationCore.Dtos.Requests;
 
@@ -6,7 +7,8 @@ namespace SubscriptionBillingAndNotification.Controllers
 {
     [ApiController]
     [Route("[Controller]")]
-    public class SubscriptionsController : Controller
+    [Authorize]
+    public class SubscriptionsController : BaseController
     {
         private readonly ISubscriptionService _subscriptionService;
 
@@ -25,6 +27,7 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpPost]
         [Route("Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateSubscription(AddSubscriptionRequestDto request, CancellationToken cancellationToken)
         {
             var response = await _subscriptionService.AddSubscription(request, cancellationToken);
@@ -33,6 +36,7 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpPut]
         [Route("Update")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateSubscription(UpdateSubscriptionRequestDto request, CancellationToken cancellationToken)
         {
             var response = await _subscriptionService.UpdateSubscription(request, cancellationToken);
@@ -41,6 +45,7 @@ namespace SubscriptionBillingAndNotification.Controllers
 
         [HttpDelete]
         [Route("Delete")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteSubscription(long id, CancellationToken cancellationToken)
         {
             var response = await _subscriptionService.DeleteSubscription(id, cancellationToken);

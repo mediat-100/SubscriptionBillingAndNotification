@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SubscriptionBillingAndNotificationCore.Enums;
 
 namespace SubscriptionBillingAndNotificationCore.Dtos.Responses
 {
@@ -10,8 +11,10 @@ namespace SubscriptionBillingAndNotificationCore.Dtos.Responses
     {
         public long UserId { get; set; }
         public string Email { get; set; }
+        public string UserType { get; set; }
         public string AccessToken { get; set; }
         public DateTime AccessTokenExpiresAt { get; set; }
         public string RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiresAt { get; set; }
     }
 }

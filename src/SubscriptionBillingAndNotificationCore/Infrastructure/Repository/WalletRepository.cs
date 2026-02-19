@@ -35,11 +35,6 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Repository
             return transactions.AsEnumerable();
         }
 
-        public async Task<Wallet?> GetWalletById(long walletId, CancellationToken cancellationToken)
-        {
-            return await _dbContext.Wallets.FirstOrDefaultAsync(x => x.Id == walletId && !x.IsDeleted, cancellationToken);
-        }
-
         public async Task<Wallet?> GetWalletByUserId(long userId, CancellationToken cancellationToken)
         {
             return await _dbContext.Wallets.FirstOrDefaultAsync(x => x.UserId == userId && !x.IsDeleted, cancellationToken);

@@ -33,24 +33,23 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             _logger = logger;
         }
 
-        public async Task<BaseResponse<string>> ActivateSubscription(ActivateSubscriptionRequestDto request, CancellationToken ct)
+        public async Task<BaseResponse<string>> ActivateSubscription(ActivateSubscriptionRequestDto request, long userId, CancellationToken ct)
         {
-            var user = await _userService.GetUserById(request.UserId, ct);
+            var user = await _userService.GetUserById(userId, ct);
             var subscription = await _subscriptionService.GetSubscriptionById(request.SubsciptionPlanId, ct);
 
             // check if user as an active subscription
-            var userSubscription = _userSubscriptionRepository.SearchUserSubscriptions(userId : request.UserId).FirstOrDefault();
+            var userSubscription = _userSubscriptionRepository.SearchUserSubscriptions(userId : userId).FirstOrDefault();
             if (userSubscription != null && userSubscription.EndDate >= DateTime.UtcNow)
                 throw new ValidationException("Your already have an active subscription!");
 
             // deduct subscription from user wallet
             var deductFunds = new DeductFundsRequestDto
             {
-                WalletId = user.Data.WalletId,
                 Amount = subscription.Data.Pricing,
                 Description = "SubscriptionPayment",
             };
-            var transaction = await _walletService.DeductFunds(deductFunds, ct);
+            var transaction = await _walletService.DeductFunds(deductFunds, userId, ct);
             // check if charge was successful
             if (transaction.Data.Status != TransactionStatus.Completed.ToString())
                 throw new Exception("Subscription Payment Failed!");
@@ -87,7 +86,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
 
             await _userSubscriptionRepository.AddUserSubscription(userSubscription, ct);
 
-            _emailService.SendEmail(userSubscription.User.Email, "Subscription Activated!", "Your subscription is now active");
+            await _emailService.SendEmail(userSubscription.User.Email, "Subscription Activated!", "Your subscription is now active");
 
             return BaseResponse<string>.Ok("", "Subscription Activated Successfully");
            
@@ -100,11 +99,11 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             if (userSubscription == null)
                 throw new ValidationException("User does not have an active subscription!");
 
-            userSubscription.SubscriptionStatus = SubscriptionStatus.Inactive;
+            userSubscription.SubscriptionStatus = SubscriptionStatus.Inactive; // check this
             userSubscription.AutoRenew = false;
             await _userSubscriptionRepository.UpdateUserSubscription(userSubscription, cancellationToken);
 
-            _emailService.SendEmail(userSubscription.User.Email, "Subscription Deactivated!", "Your subscription has now been deactived");
+            await _emailService.SendEmail(userSubscription.User.Email, "Subscription Deactivated!", "Your subscription has now been deactived");
 
             return BaseResponse<string>.Ok("", "Subscription Deactivated Successfully");
         }
@@ -118,7 +117,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 foreach (var userSubscription in subscriptionsExpiresIn3days)
                 {
                     // send a mail reminder
-                    _emailService.SendEmail(userSubscription.User.Email, "Subscription Expiring Soon!!!", "Your subscription is about to expire. Please renew!");
+                    await _emailService.SendEmail(userSubscription.User.Email, "Subscription Expiring Soon!!!", "Your subscription is about to expire. Please renew!");
 
                     // update db that mail has been sent
                     userSubscription.AdvanceReminderSent = true;
@@ -138,7 +137,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 foreach (var userSubscription in subscriptionsExpiresIn3days)
                 {
                      // send a mail reminder
-                    _emailService.SendEmail(userSubscription.User.Email, "Your subscription has expired!!!", "Your subscription has expired. Please renew!");
+                    await _emailService.SendEmail(userSubscription.User.Email, "Your subscription has expired!!!", "Your subscription has expired. Please renew!");
 
                     userSubscription.ExpiryDayReminderSent = true;
                     await _userSubscriptionRepository.UpdateUserSubscription(userSubscription, cancellationToken);

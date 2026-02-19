@@ -34,5 +34,13 @@ namespace SubscriptionBillingAndNotificationCore.Utilities
         {
             public ForbiddenException(string message) : base(message) { }
         }
+
+        public class SendEmailException : Exception
+        {
+            public SendEmailException(string message) : base(message)
+            {
+                
+            }
+        } 
     }
 }

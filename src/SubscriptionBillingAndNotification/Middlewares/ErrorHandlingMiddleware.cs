@@ -65,6 +65,16 @@ namespace SubscriptionBillingAndNotification.Middlewares
                     response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     errorResponse.Message = ex.Message ?? "Unauthorized access";
                     break;
+
+                case ForbiddenException ex:
+                    response.StatusCode = (int)HttpStatusCode.Forbidden;
+                    errorResponse.Message = ex.Message ?? "Invalid access";
+                    break;
+
+                case SendEmailException ex:
+                    response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    errorResponse.Message = "An error occurred while trying to send email";
+                    break;
                     
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;

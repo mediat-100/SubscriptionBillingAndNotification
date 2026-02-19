@@ -43,16 +43,15 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Id.ToString()),
-                //new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.UserType.ToString())
             };
 
             var generateAccessToken = GenerateAccessToken(claims);
             string refreshToken = GenerateRefreshToken();
-
+            DateTime refreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(15);
             // update refresh token expiry time
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(1);
+            user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
             await _userRepository.UpdateUser(user, cancellationToken);
 
             var response = new AuthResponseDto
@@ -61,7 +60,9 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 UserId = user.Id,
                 AccessToken = generateAccessToken.AccessToken,
                 AccessTokenExpiresAt = generateAccessToken.AccessTokenExpiresAt,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                RefreshTokenExpiresAt = refreshTokenExpiryTime,
+                UserType = user.UserType.ToString()
             };
 
             return response;
@@ -95,7 +96,7 @@ namespace SubscriptionBillingAndNotificationCore.Infrastructure.Service
                 issuer: _issuer,
                 audience: _audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(1), //CHANGE AFTER TEST!
+                expires: DateTime.UtcNow.AddMinutes(10),
                 signingCredentials: creds
             );
 

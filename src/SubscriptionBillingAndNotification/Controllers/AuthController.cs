@@ -6,7 +6,7 @@ namespace SubscriptionBillingAndNotification.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class AuthController : Controller
+    public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
 
@@ -30,6 +30,23 @@ namespace SubscriptionBillingAndNotification.Controllers
             var response = await _authService.Login(request, cancellationToken);
             return Ok(response);
         }
+
+        [HttpPost]
+        [Route("Admin/Signup")]
+        public async Task<IActionResult> AdminSignup(SignUpRequestDto request, CancellationToken cancellationToken)
+        {
+            var response = await _authService.AdminSignup(request, cancellationToken);
+            return Ok(response);
+        }
+
+        [HttpPost]
+        [Route("Admin/Login")]
+        public async Task<IActionResult> AdminLogin(AuthRequestDto request, CancellationToken cancellationToken)
+        {
+            var response = await _authService.AdminLogin(request, cancellationToken);
+            return Ok(response);
+        }
+
 
         [HttpPost]
         [Route("Refresh")]

@@ -9,7 +9,6 @@ namespace SubscriptionBillingAndNotificationCore.Contracts.IRepository
 {
     public interface IWalletRepository
     {
-        Task<Wallet?> GetWalletById(long id, CancellationToken cancellationToken);
         Task<Wallet?> GetWalletByUserId(long userId, CancellationToken cancellationToken);
         Task<Wallet> CreateWallet(Wallet wallet, CancellationToken cancellationToken);
         Task<Wallet> UpdateWallet(Wallet wallet, CancellationToken cancellationToken);

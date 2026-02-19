@@ -9,7 +9,6 @@ namespace SubscriptionBillingAndNotificationCore.Dtos.Requests
 {
     public class ActivateSubscriptionRequestDto
     {
-        public long UserId { get; set; }
         public long SubsciptionPlanId { get; set; }
         public bool AutoRenew { get; set; }
     }
