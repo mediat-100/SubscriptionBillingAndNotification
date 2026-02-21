@@ -36,5 +36,21 @@ namespace SubscriptionBillingAndNotification.Controllers
             return Ok(response);
         }
 
+        [HttpGet]
+        [Route("Current")]
+        public async Task<IActionResult> CurrentSubscription(CancellationToken ct)
+        {
+            var response = await _userSubscriptionService.UserCurrentSubscription(UserId, ct);
+            return Ok(response);
+        }
+
+        [HttpPost]
+        [Route("Upgrade")]
+        public async Task<IActionResult> Upgrade(long subscriptionPlanId,CancellationToken ct)
+        {
+            var response = await _userSubscriptionService.UpgradeSubscription(UserId, subscriptionPlanId, ct);
+            return Ok(response);
+        }
+
     }
 }

@@ -14,4 +14,11 @@ namespace SubscriptionBillingAndNotificationCore.Enums
         Expired = 3,
         Suspended = 4
     }
+
+    public enum SubCancellationReason
+    {
+        UserInitiated = 1,
+        PaymentFailed = 2,
+        Admin = 3
+    }
 }
